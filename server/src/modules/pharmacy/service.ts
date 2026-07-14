@@ -1,4 +1,5 @@
 import { prisma } from "../../utils/prisma";
+import { getIO } from "../../socket";
 
 export class PharmacyService {
   async getAllMedicines(search?: string) {
@@ -34,6 +35,7 @@ export class PharmacyService {
   async createSale(data: { patientId: string; items: { medicineId: string; quantity: number }[] }) {
     let total = 0;
     const saleItems = [];
+    const lowStockMedicines = [];
 
     for (const item of data.items) {
       const medicine = await prisma.medicine.findUnique({
@@ -58,13 +60,23 @@ export class PharmacyService {
         total: itemTotal,
       });
 
+      const newStock = medicine.stock - item.quantity;
       await prisma.medicine.update({
         where: { id: item.medicineId },
-        data: { stock: { decrement: item.quantity } },
+        data: { stock: newStock },
       });
+
+      // Check if stock is low after sale
+      if (newStock < 10) {
+        lowStockMedicines.push({
+          id: medicine.id,
+          name: medicine.name,
+          stock: newStock,
+        });
+      }
     }
 
-    return prisma.sale.create({
+    const sale = await prisma.sale.create({
       data: {
         patientId: data.patientId,
         total,
@@ -76,9 +88,20 @@ export class PharmacyService {
         items: {
           include: { medicine: { select: { id: true, name: true } } },
         },
-        patient: { select: { id: true, name: true } },
+        patient: { select: { id: true, patientId: true, name: true } },
       },
     });
+
+    // Emit low stock alerts via Socket.IO
+    if (lowStockMedicines.length > 0) {
+      getIO().emit("low-stock-alert", {
+        medicines: lowStockMedicines,
+        message: `Low stock alert: ${lowStockMedicines.map(m => m.name).join(", ")}`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return sale;
   }
 
   async getSales() {
@@ -87,7 +110,7 @@ export class PharmacyService {
         items: {
           include: { medicine: { select: { id: true, name: true } } },
         },
-        patient: { select: { id: true, name: true } },
+        patient: { select: { id: true, patientId: true, name: true } },
       },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -101,7 +124,10 @@ export class PharmacyService {
         consultationId: data.consultationId,
         notes: data.notes,
         items: {
-          create: data.items,
+          create: data.items.map((item) => ({
+            ...item,
+            quantity: Number(item.quantity) || 1,
+          })),
         },
       },
       include: {

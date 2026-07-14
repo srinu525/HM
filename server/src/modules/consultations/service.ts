@@ -35,12 +35,39 @@ export class ConsultationService {
       where: { doctorId },
       include: {
         appointment: {
-          include: { patient: { select: { id: true, name: true, phone: true } } },
+          include: { patient: { select: { id: true, patientId: true, name: true, phone: true } } },
         },
         prescriptions: true,
       },
       orderBy: { createdAt: "desc" },
       take: 20,
+    });
+  }
+
+  async getTodayCompletedByDoctor(doctorId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return prisma.consultation.findMany({
+      where: {
+        doctorId,
+        createdAt: { gte: today, lt: tomorrow },
+      },
+      include: {
+        appointment: {
+          include: { patient: { select: { id: true, patientId: true, name: true, phone: true, gender: true, dob: true } } },
+        },
+        prescriptions: {
+          include: {
+            items: {
+              include: { medicine: { select: { id: true, name: true } } },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
     });
   }
 

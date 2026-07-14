@@ -1,6 +1,5 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -45,6 +44,7 @@ model User {
 
 model Patient {
   id        String   @id @default(uuid())
+  patientId String   @unique
   name      String
   phone     String?
   email     String?
@@ -64,6 +64,7 @@ model Appointment {
   token           Int
   status          AppointmentStatus @default(SCHEDULED)
   date            DateTime          @default(now())
+  validUntil      DateTime?
   notes           String?
   consultationFee Float             @default(0)
   createdAt       DateTime          @default(now())

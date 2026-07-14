@@ -1,7 +1,7 @@
 import { prisma } from "../../utils/prisma";
 
 export class AppointmentService {
-  async create(data: { patientId: string; doctorId: string; notes?: string; consultationFee?: number }) {
+  async create(data: { patientId: string; doctorId: string; notes?: string; consultationFee?: number; validUntil?: string }) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -24,10 +24,11 @@ export class AppointmentService {
         doctorId: data.doctorId,
         notes: data.notes,
         consultationFee: data.consultationFee || 0,
+        validUntil: data.validUntil ? new Date(data.validUntil) : null,
         token,
       },
       include: {
-        patient: { select: { id: true, name: true, phone: true } },
+        patient: { select: { id: true, patientId: true, name: true, phone: true } },
         doctor: { select: { id: true, name: true } },
       },
     });
@@ -46,7 +47,7 @@ export class AppointmentService {
         },
       },
       include: {
-        patient: { select: { id: true, name: true, phone: true, gender: true } },
+        patient: { select: { id: true, patientId: true, name: true, phone: true, gender: true } },
       },
       orderBy: { token: "asc" },
     });
@@ -78,7 +79,7 @@ export class AppointmentService {
         status: { in: ["SCHEDULED", "IN_PROGRESS"] },
       },
       include: {
-        patient: { select: { id: true, name: true, phone: true, gender: true, dob: true } },
+        patient: { select: { id: true, patientId: true, name: true, phone: true, gender: true, dob: true } },
       },
       orderBy: { token: "asc" },
     });
@@ -96,7 +97,7 @@ export class AppointmentService {
         },
       },
       include: {
-        patient: { select: { id: true, name: true, phone: true } },
+        patient: { select: { id: true, patientId: true, name: true, phone: true } },
         doctor: { select: { id: true, name: true } },
       },
       orderBy: { token: "asc" },

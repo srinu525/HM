@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Pill } from "lucide-react";
 
 interface Medicine {
   id: string;
@@ -33,6 +34,7 @@ interface Medicine {
 
 interface Patient {
   id: string;
+  patientId: string;
   name: string;
   phone: string | null;
 }
@@ -69,7 +71,7 @@ export default function PharmacyPage() {
     try {
       const res = await api.get("/pharmacy/medicines", { params: { search: q || undefined } });
       setMedicines(res.data);
-    } catch {}
+    } catch (error) { console.error(error); }
   };
 
   useEffect(() => {
@@ -181,8 +183,8 @@ export default function PharmacyPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Pharmacy</h1>
-          <p className="text-gray-500">Medicine management & billing</p>
+          <h1 className="text-3xl font-bold text-gray-900">Pharmacy</h1>
+          <p className="text-gray-600 mt-1">Medicine management & billing</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={addMedicineOpen} onOpenChange={setAddMedicineOpen}>
@@ -256,7 +258,7 @@ export default function PharmacyPage() {
                   <Label>Patient *</Label>
                   <Select
                     value={billingForm.patientId}
-                    onValueChange={(v) => setBillingForm({ patientId: v })}
+                    onValueChange={(v) => v && setBillingForm({ patientId: v })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select patient" />
@@ -264,7 +266,7 @@ export default function PharmacyPage() {
                     <SelectContent>
                       {patients.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {p.name} {p.phone ? `(${p.phone})` : ""}
+                          {p.name} ({p.patientId}) {p.phone ? `- ${p.phone}` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -350,7 +352,10 @@ export default function PharmacyPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Medicines ({medicines.length})</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Pill className="h-5 w-5" />
+            Medicines Inventory ({medicines.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Input
@@ -359,24 +364,30 @@ export default function PharmacyPage() {
             onChange={(e) => handleSearch(e.target.value)}
             className="mb-4"
           />
-          <div className="space-y-2 max-h-[500px] overflow-y-auto">
+          <div className="space-y-2 max-h-125 overflow-y-auto">
             {medicines.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-4">No medicines found</p>
+              <div className="text-center py-12">
+                <p className="text-gray-500">No medicines found</p>
+                <p className="text-sm text-gray-400 mt-1">Add medicines to get started</p>
+              </div>
             ) : (
               medicines.map((med) => (
                 <div
                   key={med.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all duration-200"
                 >
-                  <div>
-                    <p className="font-medium">{med.name}</p>
-                    <p className="text-sm text-gray-500">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{med.name}</p>
+                    <p className="text-sm text-gray-500 mt-1">
                       ₹{med.price.toFixed(2)}
-                      {med.description && ` | ${med.description}`}
+                      {med.description && <span className="ml-2">| {med.description}</span>}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant={med.stock < 10 ? "destructive" : "secondary"}>
+                    <Badge 
+                      variant={med.stock < 10 ? "destructive" : "secondary"}
+                      className="px-3 py-1"
+                    >
                       Stock: {med.stock}
                     </Badge>
                     <Button

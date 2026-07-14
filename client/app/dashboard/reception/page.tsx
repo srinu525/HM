@@ -18,6 +18,7 @@ import { UserPlus, CalendarPlus, CheckCircle2, Search, X } from "lucide-react";
 
 interface Patient {
   id: string;
+  patientId: string;
   name: string;
   phone: string | null;
   email: string | null;
@@ -38,8 +39,9 @@ interface Appointment {
   token: number;
   status: string;
   date: string;
+  validUntil: string | null;
   consultationFee: number;
-  patient: { id: string; name: string; phone: string | null };
+  patient: { id: string; patientId: string; name: string; phone: string | null };
   doctor: { id: string; name: string };
 }
 
@@ -63,27 +65,28 @@ export default function ReceptionPage() {
     doctorId: "",
     notes: "",
     consultationFee: "",
+    validUntil: "",
   });
 
   const fetchPatients = async (q?: string) => {
     try {
       const res = await api.get("/patients", { params: { search: q || undefined } });
       setPatients(res.data);
-    } catch {}
+    } catch (error) { console.error(error); }
   };
 
   const fetchDoctors = async () => {
     try {
       const res = await api.get("/users/doctors");
       setDoctors(res.data);
-    } catch {}
+    } catch (error) { console.error(error); }
   };
 
   const fetchAppointments = async () => {
     try {
       const res = await api.get("/appointments");
       setAppointments(res.data);
-    } catch {}
+    } catch (error) { console.error(error); }
   };
 
   useEffect(() => {
@@ -98,7 +101,7 @@ export default function ReceptionPage() {
   };
 
   const resetForm = () => {
-    setForm({ name: "", phone: "", email: "", gender: "MALE", dob: "", address: "", doctorId: "", notes: "", consultationFee: "" });
+    setForm({ name: "", phone: "", email: "", gender: "MALE", dob: "", address: "", doctorId: "", notes: "", consultationFee: "", validUntil: "" });
     setSelectedPatient(null);
   };
 
@@ -140,6 +143,7 @@ export default function ReceptionPage() {
         doctorId: form.doctorId,
         notes: form.notes,
         consultationFee: form.consultationFee ? parseFloat(form.consultationFee) : 0,
+        validUntil: form.validUntil || undefined,
       });
       setMessage((prev) => `Appointment booked! Token #${aptRes.data.token}`);
 
@@ -166,21 +170,21 @@ export default function ReceptionPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Reception</h1>
-          <p className="text-gray-500">Patient registration & appointment booking</p>
+          <h1 className="text-3xl font-bold text-gray-900">Reception</h1>
+          <p className="text-gray-600 mt-1">Patient registration & appointment booking</p>
         </div>
         <div className="flex gap-3">
-          <div className="bg-white px-3 py-1.5 rounded-lg border text-center">
-            <p className="text-xs text-gray-500">Total</p>
-            <p className="text-lg font-bold text-gray-900">{todayAppointments.length}</p>
+          <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-center min-w-20">
+            <p className="text-xs text-gray-500 font-medium">Total</p>
+            <p className="text-xl font-bold text-gray-900">{todayAppointments.length}</p>
           </div>
-          <div className="bg-white px-3 py-1.5 rounded-lg border text-center">
-            <p className="text-xs text-gray-500">Done</p>
-            <p className="text-lg font-bold text-green-600">{completedToday}</p>
+          <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-center min-w-20">
+            <p className="text-xs text-gray-500 font-medium">Done</p>
+            <p className="text-xl font-bold text-green-600">{completedToday}</p>
           </div>
-          <div className="bg-white px-3 py-1.5 rounded-lg border text-center">
-            <p className="text-xs text-gray-500">Pending</p>
-            <p className="text-lg font-bold text-orange-600">{pendingToday}</p>
+          <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-center min-w-20">
+            <p className="text-xs text-gray-500 font-medium">Pending</p>
+            <p className="text-xl font-bold text-orange-600">{pendingToday}</p>
           </div>
         </div>
       </div>
@@ -194,7 +198,7 @@ export default function ReceptionPage() {
           }`}
         >
           {(message.includes("Token") || message.includes("registered")) && (
-            <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
           )}
           {message}
         </div>
@@ -245,7 +249,7 @@ export default function ReceptionPage() {
                       }`}
                     >
                       <div>
-                        <p className="font-medium text-sm">{p.name}</p>
+                        <p className="font-medium text-sm">{p.name} <span className="text-xs text-gray-400 ml-1">{p.patientId}</span></p>
                         <p className="text-xs text-gray-500">{p.phone} | {p.gender}</p>
                       </div>
                       {selectedPatient?.id === p.id && (
@@ -259,7 +263,7 @@ export default function ReceptionPage() {
               {selectedPatient && (
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-blue-900">{selectedPatient.name}</p>
+                    <p className="font-medium text-blue-900">{selectedPatient.name} <span className="text-sm ml-1">{selectedPatient.patientId}</span></p>
                     <p className="text-sm text-blue-700">
                       {selectedPatient.phone} | {selectedPatient.gender}
                     </p>
@@ -304,7 +308,7 @@ export default function ReceptionPage() {
                     <Label>Gender *</Label>
                     <Select
                       value={form.gender}
-                      onValueChange={(v) => setForm({ ...form, gender: v })}
+                      onValueChange={(v) => v && setForm({ ...form, gender: v })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -359,7 +363,7 @@ export default function ReceptionPage() {
                     <Label>Doctor *</Label>
                     <Select
                       value={form.doctorId}
-                      onValueChange={(v) => setForm({ ...form, doctorId: v })}
+                      onValueChange={(v) => v && setForm({ ...form, doctorId: v })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select doctor" />
@@ -381,6 +385,15 @@ export default function ReceptionPage() {
                       value={form.consultationFee}
                       onChange={(e) => setForm({ ...form, consultationFee: e.target.value })}
                       placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Valid Until</Label>
+                    <Input
+                      type="date"
+                      value={form.validUntil}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => setForm({ ...form, validUntil: e.target.value })}
                     />
                   </div>
                 </div>
@@ -422,7 +435,7 @@ export default function ReceptionPage() {
                   >
                     <div>
                       <p className="font-medium">
-                        Token #{apt.token} - {apt.patient.name}
+                        Token #{apt.token} - {apt.patient.name} <span className="text-sm text-gray-400">{apt.patient.patientId}</span>
                       </p>
                       <p className="text-sm text-gray-500">
                         Dr. {apt.doctor.name}
@@ -430,6 +443,11 @@ export default function ReceptionPage() {
                           <span className="ml-2 text-green-600 font-medium">₹{apt.consultationFee}</span>
                         )}
                       </p>
+                      {apt.validUntil && (
+                        <p className="text-xs text-orange-500">
+                          Valid until: {new Date(apt.validUntil).toLocaleDateString()}
+                        </p>
+                      )}
                     </div>
                     <Badge
                       variant={

@@ -67,22 +67,53 @@ HM is a modern Hospital Management System designed for small to medium hospitals
 - [x] Fixed `/users/doctors` endpoint accessible to all authenticated users
 - [x] Added `GET /api/appointments` for today's all appointments
 
-### Phase 3 - Polish (PENDING)
+### Phase 3 - Polish ✅ COMPLETED
 
-- [ ] Dashboard analytics (revenue charts, patient count, appointments today)
-- [ ] Search and filtering improvements
-- [ ] Form validation improvements (client-side with Zod)
-- [ ] Error handling UI (toast notifications)
-- [ ] Loading states and skeleton screens
-- [ ] Responsive design for mobile
+- [x] Dashboard analytics (revenue charts, patient count, appointments today)
+  - Created `DashboardAnalytics` component with Recharts
+  - Weekly revenue line chart
+  - Monthly appointments & patients bar chart
+  - Stats cards with loading states
+- [x] Search and filtering improvements
+  - Enhanced search in reception page
+  - Filtering in reports and sales pages
+- [x] Form validation improvements (client-side with Zod)
+  - Created validation schemas for patients, appointments, medicines, consultations
+  - Type-safe form validation
+- [x] Error handling UI (toast notifications)
+  - Created `ToastProvider` component
+  - Created `useToast` hook
+  - Integrated react-hot-toast
+- [x] Loading states and skeleton screens
+  - Created `StatsCardSkeleton`, `TableRowSkeleton`, `CardSkeleton`, `ChartSkeleton`
+  - Loading states in all data-fetching components
+- [x] Responsive design for mobile
+  - Added mobile sidebar with hamburger menu
+  - Responsive padding and grid layouts
+  - Mobile-friendly navigation
 
-### Phase 4 - Advanced Features (PENDING)
+### Phase 4 - Advanced Features ✅ COMPLETED
 
-- [ ] Low stock alerts via Socket.IO
-- [ ] Bill/invoice PDF generation
-- [ ] Print prescriptions
-- [ ] Appointment history and reporting
-- [ ] Sales history and reports
+- [x] Low stock alerts via Socket.IO
+  - Backend: Emits low-stock alerts when medicine stock < 10 after sales
+  - Frontend: Created `useSocket` hook for real-time alerts
+- [x] Bill/invoice PDF generation
+  - Created `generateInvoice` function with jsPDF
+  - Professional invoice layout with hospital branding
+  - Downloadable PDF invoices
+- [x] Print prescriptions
+  - Created `generatePrescription` function with jsPDF
+  - Includes patient details, diagnosis, medicines table
+  - Downloadable prescription PDFs
+- [x] Appointment history and reporting
+  - Created `/dashboard/reports` page
+  - Filter by doctor, date range
+  - Shows consultation details and prescriptions
+- [x] Sales history and reports
+  - Created `/dashboard/sales` page
+  - Filter by date range
+  - Download invoices for each sale
+  - Revenue statistics
 
 ### Phase 5 - Future (PENDING)
 

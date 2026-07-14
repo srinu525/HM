@@ -1,7 +1,13 @@
 "use client";
 
 import { AuthProvider } from "@/contexts/auth-context";
+import { ToastProvider } from "./toast-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <AuthProvider>
+      {children}
+      <ToastProvider />
+    </AuthProvider>
+  );
 }

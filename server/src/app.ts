@@ -3,8 +3,8 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import { createServer } from "http";
-import { Server } from "socket.io";
 import { config } from "./config";
+import { initSocket } from "./socket";
 import { errorHandler } from "./middleware/errorHandler";
 import authRoutes from "./modules/auth/routes";
 import userRoutes from "./modules/users/routes";
@@ -18,12 +18,7 @@ import statsRoutes from "./modules/stats/routes";
 const app = express();
 const httpServer = createServer(app);
 
-export const io = new Server(httpServer, {
-  cors: {
-    origin: config.corsOrigin,
-    methods: ["GET", "POST"],
-  },
-});
+initSocket(httpServer, config.corsOrigin);
 
 app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
@@ -41,18 +36,6 @@ app.use("/api/stats", statsRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
-
-  socket.on("join", (userId: string) => {
-    socket.join(`user:${userId}`);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-  });
 });
 
 app.use(errorHandler);

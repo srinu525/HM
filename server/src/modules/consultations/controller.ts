@@ -32,6 +32,15 @@ export class ConsultationController {
       next(error);
     }
   }
+
+  async getTodayCompleted(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const consultations = await consultationService.getTodayCompletedByDoctor(req.user!.id);
+      res.json(consultations);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const consultationController = new ConsultationController();

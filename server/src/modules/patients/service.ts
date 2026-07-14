@@ -2,8 +2,12 @@ import { prisma } from "../../utils/prisma";
 
 export class PatientService {
   async create(data: { name: string; phone: string; email?: string; gender: string; dob: string; address: string }) {
+    const count = await prisma.patient.count();
+    const patientId = "PAT-" + String(count + 1).padStart(4, "0");
+
     return prisma.patient.create({
       data: {
+        patientId,
         name: data.name,
         phone: data.phone,
         email: data.email,
@@ -18,6 +22,7 @@ export class PatientService {
     const where = search
       ? {
           OR: [
+            { patientId: { contains: search, mode: "insensitive" as const } },
             { name: { contains: search, mode: "insensitive" as const } },
             { phone: { contains: search } },
             { email: { contains: search, mode: "insensitive" as const } },

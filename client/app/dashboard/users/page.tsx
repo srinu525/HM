@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Users as UsersIcon } from "lucide-react";
 
 interface User {
   id: string;
@@ -50,7 +51,7 @@ export default function UsersPage() {
     try {
       const res = await api.get("/users");
       setUsers(res.data);
-    } catch {}
+    } catch (error) { console.error(error); }
   };
 
   useEffect(() => {
@@ -89,7 +90,7 @@ export default function UsersPage() {
     try {
       await api.put(`/users/${user.id}`, { isActive: !user.isActive });
       fetchUsers();
-    } catch {}
+    } catch (error) { console.error(error); }
   };
 
   const roleColors: Record<string, string> = {
@@ -103,8 +104,8 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">User Management</h1>
-          <p className="text-gray-500">Manage staff accounts and roles</p>
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600 mt-1">Manage staff accounts and roles</p>
         </div>
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogTrigger render={<Button />}>
@@ -144,7 +145,7 @@ export default function UsersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Role *</Label>
-                  <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
+                  <Select value={form.role} onValueChange={(v) => v && setForm({ ...form, role: v })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -186,24 +187,36 @@ export default function UsersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Staff Members ({users.length})</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <UsersIcon className="h-5 w-5" />
+            Staff Members ({users.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             {users.map((u) => (
               <div
                 key={u.id}
-                className={`flex items-center justify-between p-4 border rounded-lg ${
+                className={`flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all duration-200 ${
                   !u.isActive ? "opacity-50" : ""
                 }`}
               >
-                <div>
-                  <p className="font-medium">{u.name}</p>
-                  <p className="text-sm text-gray-500">{u.email}</p>
-                  {u.phone && <p className="text-sm text-gray-400">{u.phone}</p>}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-linear-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-lg font-bold text-blue-600">
+                      {u.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{u.name}</p>
+                    <p className="text-sm text-gray-500">{u.email}</p>
+                    {u.phone && <p className="text-sm text-gray-400">{u.phone}</p>}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge className={roleColors[u.role] || ""}>{u.role}</Badge>
+                  <Badge className={`${roleColors[u.role] || ""} px-3 py-1`}>
+                    {u.role}
+                  </Badge>
                   <Button
                     size="sm"
                     variant={u.isActive ? "outline" : "destructive"}

@@ -128,6 +128,7 @@ export const consultationApi = {
   create: (data: ConsultationData) => api.post("/consultations", data),
   getByDoctor: () => api.get("/consultations"),
   getByPatient: (patientId: string) => api.get(`/consultations/patient/${patientId}`),
+  getTodayCompleted: () => api.get("/consultations/completed-today"),
 };
 
 export const pharmacyApi = {
@@ -151,4 +152,13 @@ export const notificationApi = {
   getAll: () => api.get("/notifications"),
   markAsRead: (id: string) => api.put(`/notifications/${id}/read`),
   markAllAsRead: () => api.put("/notifications/read-all"),
+};
+
+export const statsApi = {
+  getBasic: () => api.get("/stats"),
+  getAnalytics: () => api.get("/stats/analytics"),
+  getAppointmentHistory: (filters?: { doctorId?: string; patientId?: string; startDate?: string; endDate?: string }) =>
+    api.get("/stats/appointments/history", { params: filters }),
+  getSalesHistory: (filters?: { startDate?: string; endDate?: string }) =>
+    api.get("/stats/sales/history", { params: filters }),
 };
