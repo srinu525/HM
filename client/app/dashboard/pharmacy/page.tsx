@@ -70,7 +70,7 @@ export default function PharmacyPage() {
   const fetchMedicines = async (q?: string) => {
     try {
       const res = await api.get("/pharmacy/medicines", { params: { search: q || undefined } });
-      setMedicines(res.data);
+      setMedicines(res.data.data);
     } catch (error) { console.error(error); }
   };
 
@@ -80,8 +80,8 @@ export default function PharmacyPage() {
         api.get("/pharmacy/medicines"),
         api.get("/patients"),
       ]);
-      setMedicines(mRes.data);
-      setPatients(pRes.data);
+      setMedicines(mRes.data.data);
+      setPatients(pRes.data.data);
     }
     load();
   }, []);
@@ -147,7 +147,7 @@ export default function PharmacyPage() {
         patientId: billingForm.patientId,
         items: validItems,
       });
-      setMessage(`Sale completed! Total: ₹${res.data.total}`);
+      setMessage(`Sale completed! Total: ₹${res.data.data.total}`);
       setBillingDialogOpen(false);
       setSaleItems([{ medicineId: "", quantity: 1 }]);
       setBillingForm({ patientId: "" });

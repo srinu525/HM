@@ -50,14 +50,14 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       const res = await api.get("/users");
-      setUsers(res.data);
+      setUsers(res.data.data);
     } catch (error) { console.error(error); }
   };
 
   useEffect(() => {
     async function load() {
       const res = await api.get("/users");
-      setUsers(res.data);
+      setUsers(res.data.data);
     }
     load();
   }, []);

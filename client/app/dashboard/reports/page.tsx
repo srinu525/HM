@@ -66,7 +66,7 @@ export default function ReportsPage() {
   const loadDoctors = async () => {
     try {
       const res = await api.get("/users/doctors");
-      setDoctors(res.data);
+      setDoctors(res.data.data);
     } catch (error) {
       console.error(error);
     }
@@ -81,7 +81,7 @@ export default function ReportsPage() {
       if (filters.endDate) params.endDate = filters.endDate;
 
       const res = await api.get("/stats/appointments/history", { params });
-      setAppointments(res.data);
+      setAppointments(res.data.data);
     } catch (error) {
       console.error(error);
     } finally {

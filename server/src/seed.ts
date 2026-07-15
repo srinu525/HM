@@ -9,77 +9,81 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const adminEmail = "admin@hospital.com";
-  const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
-
-  if (existingAdmin) {
-    console.log("Admin user already exists");
-    return;
+  // Create default organization
+  let org = await prisma.organization.findFirst();
+  if (!org) {
+    org = await prisma.organization.create({
+      data: {
+        name: "Default Hospital",
+        slug: "default-hospital",
+        email: "info@defaulthospital.com",
+        phone: "1234567890",
+      },
+    });
+    console.log("Organization created:", org.name, org.id);
   }
 
-  const hashedPassword = await bcrypt.hash("admin123", 10);
+  // Update existing users with organizationId
+  const users = await prisma.user.findMany({ where: { organizationId: undefined as any } });
+  for (const user of users) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { organizationId: org.id },
+    });
+  }
+  console.log(`Updated ${users.length} users`);
 
-  const admin = await prisma.user.create({
-    data: {
-      name: "Admin",
-      email: adminEmail,
-      password: hashedPassword,
-      role: "ADMIN",
-      phone: "1234567890",
-    },
-  });
+  // Update existing patients with organizationId
+  const patients = await prisma.patient.findMany({ where: { organizationId: undefined as any } });
+  for (const patient of patients) {
+    await prisma.patient.update({
+      where: { id: patient.id },
+      data: { organizationId: org.id },
+    });
+  }
+  console.log(`Updated ${patients.length} patients`);
 
-  console.log("Admin user created:", admin.email);
-
-  const doctor = await prisma.user.create({
-    data: {
-      name: "Dr. Smith",
-      email: "doctor@hospital.com",
-      password: await bcrypt.hash("doctor123", 10),
-      role: "DOCTOR",
-      phone: "1234567891",
-    },
-  });
-
-  console.log("Doctor user created:", doctor.email);
-
-  const receptionist = await prisma.user.create({
-    data: {
-      name: "Receptionist",
-      email: "receptionist@hospital.com",
-      password: await bcrypt.hash("receptionist123", 10),
-      role: "RECEPTIONIST",
-      phone: "1234567892",
-    },
-  });
-
-  console.log("Receptionist user created:", receptionist.email);
-
-  const pharmacist = await prisma.user.create({
-    data: {
-      name: "Pharmacist",
-      email: "pharmacist@hospital.com",
-      password: await bcrypt.hash("pharmacist123", 10),
-      role: "PHARMACIST",
-      phone: "1234567893",
-    },
-  });
-
-  console.log("Pharmacist user created:", pharmacist.email);
-
-  const medicines = [
-    { name: "Paracetamol", description: "Pain reliever", price: 5.0, stock: 100 },
-    { name: "Amoxicillin", description: "Antibiotic", price: 15.0, stock: 50 },
-    { name: "Ibuprofen", description: "Anti-inflammatory", price: 8.0, stock: 80 },
-    { name: "Cetirizine", description: "Antihistamine", price: 6.0, stock: 60 },
-    { name: "Omeprazole", description: "Acid reducer", price: 12.0, stock: 40 },
-  ];
-
+  // Update existing medicines with organizationId
+  const medicines = await prisma.medicine.findMany({ where: { organizationId: undefined as any } });
   for (const med of medicines) {
-    await prisma.medicine.create({ data: med });
+    await prisma.medicine.update({
+      where: { id: med.id },
+      data: { organizationId: org.id },
+    });
+  }
+  console.log(`Updated ${medicines.length} medicines`);
+
+  // Update existing notifications with organizationId
+  const notifications = await prisma.notification.findMany({ where: { organizationId: undefined as any } });
+  for (const n of notifications) {
+    await prisma.notification.update({
+      where: { id: n.id },
+      data: { organizationId: org.id },
+    });
+  }
+  console.log(`Updated ${notifications.length} notifications`);
+
+  // Seed admin user if not exists
+  const existingAdmin = await prisma.user.findFirst({
+    where: { email: "admin@hospital.com", organizationId: org.id },
+  });
+
+  if (!existingAdmin) {
+    const hashedPassword = await bcrypt.hash("admin123", 10);
+    await prisma.user.create({
+      data: {
+        name: "Super Admin",
+        email: "admin@hospital.com",
+        password: hashedPassword,
+        role: "SUPER_ADMIN",
+        phone: "1234567890",
+        organizationId: org.id,
+      },
+    });
+    console.log("Super Admin user created");
   }
 
-  console.log("Medicines seeded");
+  console.log("Migration seed completed");
 }
 
 main()

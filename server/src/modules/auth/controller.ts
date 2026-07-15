@@ -1,23 +1,24 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { authService } from "./service";
 import { AuthRequest } from "../../middleware/auth";
+import { sendSuccess, sendCreated } from "../../common/response";
 
 export class AuthController {
-  async register(req: Request, res: Response, next: NextFunction) {
+  async register(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { name, email, password, role, phone } = req.body;
-      const result = await authService.register(name, email, password, role, phone);
-      res.status(201).json(result);
+      const { name, email, password, role, organizationId, phone } = req.body;
+      const result = await authService.register(name, email, password, role, organizationId, phone);
+      sendCreated(res, result, "User registered successfully");
     } catch (error) {
       next(error);
     }
   }
 
-  async login(req: Request, res: Response, next: NextFunction) {
+  async login(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { email, password } = req.body;
-      const result = await authService.login(email, password);
-      res.json(result);
+      const { email, password, organizationSlug } = req.body;
+      const result = await authService.login(email, password, organizationSlug);
+      sendSuccess(res, result, "Login successful");
     } catch (error) {
       next(error);
     }
@@ -26,7 +27,7 @@ export class AuthController {
   async getProfile(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const user = await authService.getProfile(req.user!.id);
-      res.json(user);
+      sendSuccess(res, user, "Profile fetched");
     } catch (error) {
       next(error);
     }

@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { config } from "../config";
+import { env } from "../config/env";
+import { AppError } from "../common/errors/AppError";
 
 export interface AuthRequest extends Request {
   user?: {
     id: string;
     email: string;
     role: string;
+    organizationId: string;
   };
 }
 
@@ -14,32 +16,33 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "No token provided" });
+    return next(AppError.unauthorized("No token provided"));
   }
 
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, config.jwtSecret) as {
+    const decoded = jwt.verify(token, env.JWT_SECRET) as {
       id: string;
       email: string;
       role: string;
+      organizationId: string;
     };
     req.user = decoded;
     next();
-  } catch (error) {
-    return res.status(401).json({ message: "Invalid token" });
+  } catch {
+    next(AppError.unauthorized("Invalid or expired token"));
   }
 };
 
 export const authorize = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+      return next(AppError.unauthorized("Not authenticated"));
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Insufficient permissions" });
+      return next(AppError.forbidden("Insufficient permissions"));
     }
 
     next();

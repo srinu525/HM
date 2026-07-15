@@ -28,7 +28,7 @@ interface QueueItem {
     name: string;
     phone: string | null;
     gender: string;
-    dob: string;
+    dob: string | null;
   };
 }
 
@@ -132,14 +132,14 @@ export default function DoctorPage() {
     try {
       if (!user) return;
       const res = await api.get(`/appointments/queue/${user.id}`);
-      setQueue(res.data);
+      setQueue(res.data.data);
     } catch (error) { console.error(error); }
   };
 
   const fetchCompleted = async () => {
     try {
       const res = await consultationApi.getTodayCompleted();
-      setCompletedConsultations(res.data);
+      setCompletedConsultations(res.data.data);
     } catch (error) { console.error(error); }
   };
 
@@ -151,9 +151,9 @@ export default function DoctorPage() {
         api.get("/pharmacy/medicines"),
         api.get(`/appointments/doctor/${user.id}`),
       ]);
-      setQueue(qRes.data);
-      setMedicines(mRes.data);
-      setTodayAppointments(aRes.data);
+      setQueue(qRes.data.data);
+      setMedicines(mRes.data.data);
+      setTodayAppointments(aRes.data.data);
       fetchCompleted();
     }
     load();
@@ -165,7 +165,7 @@ export default function DoctorPage() {
     setPrescriptionItems([{ medicineId: "", dosage: "", duration: "", instructions: "", quantity: 1 }]);
     try {
       const res = await consultationApi.getByPatient(item.patient.id);
-      setTreatmentHistory(res.data);
+      setTreatmentHistory(res.data.data);
     } catch {
       setTreatmentHistory([]);
     }
@@ -210,7 +210,7 @@ export default function DoctorPage() {
       if (validItems.length > 0) {
         await api.post("/pharmacy/prescriptions", {
           patientId: selectedAppointment.patient.id,
-          consultationId: consultRes.data.id,
+          consultationId: consultRes.data.data.id,
           notes: consultationForm.prescriptionNotes,
           items: validItems.map((item) => ({
             ...item,
@@ -233,7 +233,7 @@ export default function DoctorPage() {
       });
 
       setPrintPrescription({
-        patient: selectedAppointment.patient,
+        patient: { ...selectedAppointment.patient, dob: selectedAppointment.patient.dob || "" },
         token: selectedAppointment.token,
         date: new Date().toISOString(),
         doctorName: user.name,
@@ -248,7 +248,7 @@ export default function DoctorPage() {
       fetchQueue();
       fetchCompleted();
       const aRes = await api.get(`/appointments/doctor/${user.id}`);
-      setTodayAppointments(aRes.data);
+      setTodayAppointments(aRes.data.data);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setMessage(error.response?.data?.message || "Failed to complete consultation");
@@ -330,7 +330,7 @@ export default function DoctorPage() {
                   Consultation — #{selectedAppointment.token} {selectedAppointment.patient.name} <span className="text-sm text-gray-400">{selectedAppointment.patient.patientId}</span>
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {selectedAppointment.patient.gender} | DOB: {new Date(selectedAppointment.patient.dob).toLocaleDateString()}
+                  {selectedAppointment.patient.gender} | DOB: {selectedAppointment.patient.dob ? new Date(selectedAppointment.patient.dob).toLocaleDateString() : "N/A"}
                   {selectedAppointment.patient.phone && ` | ${selectedAppointment.patient.phone}`}
                 </p>
               </div>
@@ -550,7 +550,7 @@ export default function DoctorPage() {
                           <p className="font-medium text-gray-900">{item.patient.name} <span className="text-sm text-gray-400">{item.patient.patientId}</span></p>
                           <p className="text-sm text-gray-500 mt-0.5">
                             {item.patient.gender} | DOB:{" "}
-                            {new Date(item.patient.dob).toLocaleDateString()}
+                            {item.patient.dob ? new Date(item.patient.dob).toLocaleDateString() : "N/A"}
                             {item.patient.phone && ` | ${item.patient.phone}`}
                           </p>
                           {item.notes && (

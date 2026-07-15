@@ -5,7 +5,8 @@ export const patientSchema = z.object({
   phone: z.string().regex(/^[0-9]{10}$/, "Phone must be 10 digits"),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]),
-  dob: z.string().min(1, "Date of birth is required"),
+  age: z.number().min(0, "Age is required"),
+  dob: z.string().optional(),
   address: z.string().min(1, "Address is required"),
 });
 

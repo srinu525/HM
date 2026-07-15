@@ -29,7 +29,7 @@ export default function NotificationsPage() {
   const loadNotifications = async () => {
     try {
       const res = await api.get("/notifications");
-      setNotifications(res.data);
+      setNotifications(res.data.data);
     } catch (error) {
       console.error(error);
     } finally {

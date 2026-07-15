@@ -1,12 +1,13 @@
 import { Response, NextFunction } from "express";
 import { notificationService } from "./service";
 import { AuthRequest } from "../../middleware/auth";
+import { sendSuccess } from "../../common/response";
 
 export class NotificationController {
   async getByUser(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const notifications = await notificationService.getByUser(req.user!.id);
-      res.json(notifications);
+      sendSuccess(res, notifications, "Notifications fetched");
     } catch (error) {
       next(error);
     }
@@ -14,8 +15,8 @@ export class NotificationController {
 
   async markAsRead(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const notification = await notificationService.markAsRead(req.params.id as string);
-      res.json(notification);
+      const notification = await notificationService.markAsRead(req.params.id);
+      sendSuccess(res, notification, "Notification marked as read");
     } catch (error) {
       next(error);
     }
@@ -24,7 +25,7 @@ export class NotificationController {
   async markAllAsRead(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       await notificationService.markAllAsRead(req.user!.id);
-      res.json({ message: "All notifications marked as read" });
+      sendSuccess(res, null, "All notifications marked as read");
     } catch (error) {
       next(error);
     }

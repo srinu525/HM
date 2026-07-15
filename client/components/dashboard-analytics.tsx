@@ -44,7 +44,7 @@ export function DashboardAnalytics() {
     try {
       setLoading(true);
       const res = await api.get("/stats/analytics");
-      setStats(res.data);
+      setStats(res.data.data);
     } catch (error) {
       console.error("Failed to load analytics:", error);
     } finally {

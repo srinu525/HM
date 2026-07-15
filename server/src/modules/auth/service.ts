@@ -1,13 +1,21 @@
 import { prisma } from "../../utils/prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { config } from "../../config";
+import { env } from "../../config/env";
+import { AppError } from "../../common/errors/AppError";
 
 export class AuthService {
-  async register(name: string, email: string, password: string, role: string, phone?: string) {
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+  async register(name: string, email: string, password: string, role: string, organizationId: string, phone?: string) {
+    const org = await prisma.organization.findUnique({ where: { id: organizationId } });
+    if (!org) {
+      throw AppError.notFound("Organization not found");
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email_organizationId: { email, organizationId } },
+    });
     if (existingUser) {
-      throw { statusCode: 400, message: "Email already registered" };
+      throw AppError.conflict("Email already registered in this organization");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -19,7 +27,9 @@ export class AuthService {
         password: hashedPassword,
         role: role as any,
         phone,
+        organizationId,
       },
+      include: { organization: { select: { id: true, name: true, slug: true } } },
     });
 
     const token = this.generateToken(user);
@@ -30,24 +40,35 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        organizationId: user.organizationId,
+        organization: user.organization,
       },
       token,
     };
   }
 
-  async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({ where: { email } });
+  async login(email: string, password: string, organizationSlug: string) {
+    const org = await prisma.organization.findUnique({ where: { slug: organizationSlug } });
+    if (!org) {
+      throw AppError.notFound("Organization not found");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email_organizationId: { email, organizationId: org.id } },
+      include: { organization: { select: { id: true, name: true, slug: true } } },
+    });
+
     if (!user) {
-      throw { statusCode: 401, message: "Invalid credentials" };
+      throw AppError.unauthorized("Invalid credentials");
     }
 
     if (!user.isActive) {
-      throw { statusCode: 403, message: "Account is deactivated" };
+      throw AppError.forbidden("Account is deactivated");
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw { statusCode: 401, message: "Invalid credentials" };
+      throw AppError.unauthorized("Invalid credentials");
     }
 
     const token = this.generateToken(user);
@@ -58,6 +79,8 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        organizationId: user.organizationId,
+        organization: user.organization,
       },
       token,
     };
@@ -74,21 +97,26 @@ export class AuthService {
         phone: true,
         isActive: true,
         createdAt: true,
+        organizationId: true,
+        organization: { select: { id: true, name: true, slug: true } },
       },
     });
 
     if (!user) {
-      throw { statusCode: 404, message: "User not found" };
+      throw AppError.notFound("User not found");
     }
 
     return user;
   }
 
-  private generateToken(user: { id: string; email: string; role: string }) {
-    const payload = { id: user.id, email: user.email, role: user.role };
-    const secret = config.jwtSecret;
-    const options: jwt.SignOptions = { expiresIn: config.jwtExpiresIn as unknown as number };
-    return jwt.sign(payload, secret, options);
+  private generateToken(user: { id: string; email: string; role: string; organizationId: string }) {
+    const payload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId,
+    };
+    return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions);
   }
 }
 

@@ -23,7 +23,8 @@ interface Patient {
   phone: string | null;
   email: string | null;
   gender: string;
-  dob: string;
+  age: number;
+  dob: string | null;
   address: string | null;
 }
 
@@ -60,6 +61,7 @@ export default function ReceptionPage() {
     phone: "",
     email: "",
     gender: "MALE",
+    age: "",
     dob: "",
     address: "",
     doctorId: "",
@@ -71,21 +73,21 @@ export default function ReceptionPage() {
   const fetchPatients = async (q?: string) => {
     try {
       const res = await api.get("/patients", { params: { search: q || undefined } });
-      setPatients(res.data);
+      setPatients(res.data.data);
     } catch (error) { console.error(error); }
   };
 
   const fetchDoctors = async () => {
     try {
       const res = await api.get("/users/doctors");
-      setDoctors(res.data);
+      setDoctors(res.data.data);
     } catch (error) { console.error(error); }
   };
 
   const fetchAppointments = async () => {
     try {
       const res = await api.get("/appointments");
-      setAppointments(res.data);
+      setAppointments(res.data.data);
     } catch (error) { console.error(error); }
   };
 
@@ -101,7 +103,7 @@ export default function ReceptionPage() {
   };
 
   const resetForm = () => {
-    setForm({ name: "", phone: "", email: "", gender: "MALE", dob: "", address: "", doctorId: "", notes: "", consultationFee: "", validUntil: "" });
+    setForm({ name: "", phone: "", email: "", gender: "MALE", age: "", dob: "", address: "", doctorId: "", notes: "", consultationFee: "", validUntil: "" });
     setSelectedPatient(null);
   };
 
@@ -113,6 +115,7 @@ export default function ReceptionPage() {
       phone: patient.phone || "",
       email: patient.email || "",
       gender: patient.gender,
+      age: String(patient.age),
       dob: patient.dob ? new Date(patient.dob).toISOString().split("T")[0] : "",
       address: patient.address || "",
     }));
@@ -131,11 +134,12 @@ export default function ReceptionPage() {
           phone: form.phone,
           email: form.email,
           gender: form.gender,
-          dob: new Date(form.dob).toISOString(),
+          age: Number(form.age),
+          dob: form.dob ? new Date(form.dob).toISOString() : null,
           address: form.address,
         });
-        patientId = patientRes.data.id;
-        setMessage(`Patient "${patientRes.data.name}" registered! `);
+        patientId = patientRes.data.data.id;
+        setMessage(`Patient "${patientRes.data.data.name}" registered! `);
       }
 
       const aptRes = await api.post("/appointments", {
@@ -145,7 +149,7 @@ export default function ReceptionPage() {
         consultationFee: form.consultationFee ? parseFloat(form.consultationFee) : 0,
         validUntil: form.validUntil || undefined,
       });
-      setMessage((prev) => `Appointment booked! Token #${aptRes.data.token}`);
+      setMessage((prev) => `Appointment booked! Token #${aptRes.data.data.token}`);
 
       resetForm();
       fetchAppointments();
@@ -290,20 +294,7 @@ export default function ReceptionPage() {
                     required
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Phone * (10 digits)</Label>
-                    <Input
-                      type="tel"
-                      value={form.phone}
-                      onChange={(e) =>
-                        setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })
-                      }
-                      pattern="[0-9]{10}"
-                      maxLength={10}
-                      required
-                    />
-                  </div>
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
                     <Label>Gender *</Label>
                     <Select
@@ -320,14 +311,57 @@ export default function ReceptionPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label>Date of Birth *</Label>
+                    <Label>Age *</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={150}
+                      value={form.age}
+                      onChange={(e) => {
+                        const age = e.target.value;
+                        if (age) {
+                          const birthYear = new Date().getFullYear() - Number(age);
+                          setForm({ ...form, age, dob: `${birthYear}-01-01` });
+                        } else {
+                          setForm({ ...form, age, dob: "" });
+                        }
+                      }}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date of Birth</Label>
                     <Input
                       type="date"
                       value={form.dob}
-                      onChange={(e) => setForm({ ...form, dob: e.target.value })}
+                      onChange={(e) => {
+                        const dob = e.target.value;
+                        if (dob) {
+                          const today = new Date();
+                          const birth = new Date(dob);
+                          let age = today.getFullYear() - birth.getFullYear();
+                          const m = today.getMonth() - birth.getMonth();
+                          if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+                          setForm({ ...form, dob, age: String(age) });
+                        } else {
+                          setForm({ ...form, dob, age: "" });
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Phone * (10 digits)</Label>
+                    <Input
+                      type="tel"
+                      value={form.phone}
+                      onChange={(e) =>
+                        setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })
+                      }
+                      pattern="[0-9]{10}"
+                      maxLength={10}
                       required
                     />
                   </div>

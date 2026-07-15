@@ -7,6 +7,7 @@ datasource db {
 }
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
   RECEPTIONIST
   DOCTOR
@@ -26,37 +27,65 @@ enum Gender {
   OTHER
 }
 
-model User {
+model Organization {
   id        String   @id @default(uuid())
   name      String
-  email     String   @unique
-  password  String
-  role      Role
+  slug      String   @unique
+  email     String?
   phone     String?
+  address   String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  consultations Consultation[]
-  doctorAppointments Appointment[] @relation("DoctorAppointments")
+  users         User[]
+  patients      Patient[]
+  medicines     Medicine[]
   notifications Notification[]
+}
+
+model User {
+  id             String   @id @default(uuid())
+  name           String
+  email          String
+  password       String
+  role           Role
+  phone          String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  consultations     Consultation[]
+  doctorAppointments Appointment[]  @relation("DoctorAppointments")
+  notifications     Notification[]
+
+  @@unique([email, organizationId])
 }
 
 model Patient {
   id        String   @id @default(uuid())
-  patientId String   @unique
+  patientId String
   name      String
   phone     String?
   email     String?
   gender    Gender
-  dob       DateTime
+  age       Int      @default(0)
+  dob       DateTime?
   address   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
   appointments  Appointment[]
   prescriptions Prescription[]
   sales         Sale[]
+
+  @@unique([patientId, organizationId])
 }
 
 model Appointment {
@@ -132,6 +161,9 @@ model Medicine {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
   prescriptionItems PrescriptionItem[]
   saleItems         SaleItem[]
 }
@@ -168,4 +200,7 @@ model Notification {
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 }

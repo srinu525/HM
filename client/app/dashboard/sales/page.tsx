@@ -58,7 +58,7 @@ export default function SalesPage() {
       if (filters.endDate) params.endDate = filters.endDate;
 
       const res = await api.get("/stats/sales/history", { params });
-      setSales(res.data);
+      setSales(res.data.data);
     } catch (error) {
       console.error(error);
     } finally {

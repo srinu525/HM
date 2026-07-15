@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -28,17 +28,34 @@ api.interceptors.response.use(
         localStorage.removeItem("user");
         window.location.href = "/login";
       }
+    } else if (error.response?.status === 403) {
+      const msg = error.response?.data?.message || "";
+      if (msg.includes("organization") || msg.includes("Not authenticated") || msg.includes("No token")) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+        }
+      }
     }
     return Promise.reject(error);
   }
 );
 
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: "ADMIN" | "RECEPTIONIST" | "DOCTOR" | "PHARMACIST";
+  role: "SUPER_ADMIN" | "ADMIN" | "RECEPTIONIST" | "DOCTOR" | "PHARMACIST";
   phone?: string;
+  organizationId: string;
+  organization?: Organization;
 }
 
 export interface AuthResponse {
@@ -51,7 +68,8 @@ export interface PatientData {
   phone?: string;
   email?: string;
   gender: "MALE" | "FEMALE" | "OTHER";
-  dob: string;
+  age: number;
+  dob?: string;
   address?: string;
 }
 
@@ -101,11 +119,11 @@ export interface PrescriptionData {
 }
 
 export const authApi = {
-  login: (email: string, password: string) =>
-    api.post<AuthResponse>("/auth/login", { email, password }),
-  register: (data: { name: string; email: string; password: string; role: string; phone?: string }) =>
-    api.post<AuthResponse>("/auth/register", data),
-  getProfile: () => api.get<User>("/auth/profile"),
+  login: (email: string, password: string, organizationSlug: string) =>
+    api.post<{ success: boolean; data: AuthResponse }>("/auth/login", { email, password, organizationSlug }),
+  register: (data: { name: string; email: string; password: string; role: string; organizationId: string; phone?: string }) =>
+    api.post<{ success: boolean; data: AuthResponse }>("/auth/register", data),
+  getProfile: () => api.get<{ success: boolean; data: User }>("/auth/profile"),
 };
 
 export const patientApi = {
@@ -139,6 +157,8 @@ export const pharmacyApi = {
     api.put(`/pharmacy/medicines/${id}/stock`, { stock }),
   createSale: (data: SaleData) => api.post("/pharmacy/sales", data),
   getSales: () => api.get("/pharmacy/sales"),
+  getPrescriptions: (filters?: { patientId?: string; doctorId?: string; startDate?: string; endDate?: string }) =>
+    api.get("/pharmacy/prescriptions", { params: filters }),
   createPrescription: (data: PrescriptionData) => api.post("/pharmacy/prescriptions", data),
 };
 

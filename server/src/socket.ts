@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import { logger } from "./common/logger";
 
 let io: Server;
 
@@ -11,14 +12,14 @@ export function initSocket(httpServer: Parameters<typeof Server>[0], corsOrigin:
   });
 
   io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
+    logger.debug({ socketId: socket.id }, "Client connected");
 
     socket.on("join", (userId: string) => {
       socket.join(`user:${userId}`);
     });
 
     socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
+      logger.debug({ socketId: socket.id }, "Client disconnected");
     });
   });
 
