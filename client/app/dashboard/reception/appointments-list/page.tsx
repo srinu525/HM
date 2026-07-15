@@ -112,7 +112,7 @@ export default function AppointmentsListPage() {
               <Label>Doctor</Label>
               <Select
                 value={filters.doctorId}
-                onValueChange={(v) => setFilters({ ...filters, doctorId: v === "all" ? "" : v })}
+                onValueChange={(v) => setFilters({ ...filters, doctorId: v === "all" ? "" : (v ?? "") })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All doctors" />
@@ -131,7 +131,7 @@ export default function AppointmentsListPage() {
               <Label>Status</Label>
               <Select
                 value={filters.status}
-                onValueChange={(v) => setFilters({ ...filters, status: v === "all" ? "" : v })}
+                onValueChange={(v) => setFilters({ ...filters, status: v === "all" ? "" : (v ?? "") })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />

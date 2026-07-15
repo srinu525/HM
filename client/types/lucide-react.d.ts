@@ -1,61 +1,52 @@
-declare module 'lucide-react' {
-  import { FC, SVGProps } from 'react';
-  
-  export interface IconProps extends SVGProps<SVGSVGElement> {
-    size?: number | string;
-    color?: string;
-    className?: string;
-    strokeWidth?: number | string;
-  }
-  
-  export type Icon = FC<IconProps>;
-  
-  // Layout icons
+declare module "lucide-react" {
+  import type { ComponentType, SVGProps } from "react";
+  type Icon = ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
+
+  export const Printer: Icon;
+  export const CheckCircle: Icon;
+  export const ShoppingCart: Icon;
+  export const Package: Icon;
+  export const AlertTriangle: Icon;
+  export const Receipt: Icon;
+  export const Clock: Icon;
+  export const Mail: Icon;
+  export const Lock: Icon;
+  export const Hospital: Icon;
+  export const Shield: Icon;
+  export const Building2: Icon;
+  export const Menu: Icon;
+  export const XIcon: Icon;
+  export const ChevronDownIcon: Icon;
+  export const ChevronUpIcon: Icon;
+  export const CheckIcon: Icon;
   export const Users: Icon;
   export const Calendar: Icon;
   export const Stethoscope: Icon;
   export const Pill: Icon;
   export const Bell: Icon;
   export const LayoutDashboard: Icon;
-  export const LogOut: Icon;
-  
-  // Reception page icons
-  export const UserPlus: Icon;
-  export const CalendarPlus: Icon;
-  export const CheckCircle2: Icon;
-  export const Search: Icon;
-  export const X: Icon;
-  
-  // Doctor page icons
-  export const History: Icon;
-  
-  // Notifications page icons
-  export const Bell: Icon;
-  export const CheckCheck: Icon;
-  
-  // Reports page icons
-  export const User: Icon;
   export const FileText: Icon;
-
-  // Analytics icons
-  export const TrendingUp: Icon;
-
-  // Common icons
+  export const ArrowRight: Icon;
+  export const LogOut: Icon;
+  export const User: Icon;
   export const ChevronDown: Icon;
-  export const ChevronUp: Icon;
+  export const Search: Icon;
+  export const UserPlus: Icon;
+  export const Edit: Icon;
+  export const CheckCircle2: Icon;
+  export const CalendarPlus: Icon;
+  export const X: Icon;
+  export const History: Icon;
+  export const ArrowLeft: Icon;
   export const Check: Icon;
   export const Plus: Icon;
-  export const Minus: Icon;
-  export const Edit: Icon;
-  export const Trash: Icon;
-  export const Eye: Icon;
-  export const AlertCircle: Icon;
-  export const Info: Icon;
   export const Filter: Icon;
   export const Download: Icon;
-  export const ArrowLeft: Icon;
-  export const ArrowRight: Icon;
-  export const RefreshCw: Icon;
-
-  export default Icon;
+  export const TrendingUp: Icon;
+  export const CheckCheck: Icon;
+  export const Activity: Icon;
+  export const Settings: Icon;
+  export const Home: Icon;
+  export const BarChart3: Icon;
+  export const AlertCircle: Icon;
 }

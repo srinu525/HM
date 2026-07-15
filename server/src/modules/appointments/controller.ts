@@ -15,7 +15,7 @@ export class AppointmentController {
 
   async getByDoctor(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const appointments = await appointmentService.getByDoctor(req.params.doctorId, req.user!.organizationId);
+      const appointments = await appointmentService.getByDoctor(req.params.doctorId as string, req.user!.organizationId);
       sendSuccess(res, appointments, "Appointments fetched");
     } catch (error) {
       next(error);
@@ -24,7 +24,7 @@ export class AppointmentController {
 
   async updateStatus(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const appointment = await appointmentService.updateStatus(req.params.id, req.body.status, req.user!.organizationId);
+      const appointment = await appointmentService.updateStatus(req.params.id as string, req.body.status, req.user!.organizationId);
       sendSuccess(res, appointment, "Status updated");
     } catch (error) {
       next(error);
@@ -33,7 +33,7 @@ export class AppointmentController {
 
   async getQueue(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const queue = await appointmentService.getQueue(req.params.doctorId, req.user!.organizationId);
+      const queue = await appointmentService.getQueue(req.params.doctorId as string, req.user!.organizationId);
       sendSuccess(res, queue, "Queue fetched");
     } catch (error) {
       next(error);

@@ -163,7 +163,7 @@ export default function PrescriptionsPage() {
               <Label>Doctor</Label>
               <Select
                 value={filters.doctorId}
-                onValueChange={(v) => setFilters({ ...filters, doctorId: v === "all" ? "" : v })}
+                onValueChange={(v) => setFilters({ ...filters, doctorId: v === "all" ? "" : (v ?? "") })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All doctors" />

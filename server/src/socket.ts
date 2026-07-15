@@ -1,9 +1,10 @@
 import { Server } from "socket.io";
 import { logger } from "./common/logger";
+import type http from "http";
 
 let io: Server;
 
-export function initSocket(httpServer: Parameters<typeof Server>[0], corsOrigin: string) {
+export function initSocket(httpServer: http.Server, corsOrigin: string) {
   io = new Server(httpServer, {
     cors: {
       origin: corsOrigin,

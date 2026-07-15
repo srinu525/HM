@@ -7,7 +7,7 @@ export class AppointmentService {
     today.setHours(0, 0, 0, 0);
     const lastToken = await prisma.appointment.findFirst({
       where: {
-        doctorId,
+        doctorId: data.doctorId,
         date: { gte: today, lt: new Date(today.getTime() + 86400000) },
       },
       orderBy: { token: "desc" },
@@ -30,7 +30,8 @@ export class AppointmentService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return prisma.appointment.findMany({
-      where: { doctorId, date: { gte: today, lt: new Date(today.getTime() + 86400000) } },
+            where: {
+        doctorId, date: { gte: today, lt: new Date(today.getTime() + 86400000) } },
       include: { patient: { select: { id: true, patientId: true, name: true, phone: true, gender: true } } },
       orderBy: { token: "asc" },
     });

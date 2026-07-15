@@ -25,7 +25,7 @@ export class PatientController {
 
   async getById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const patient = await patientService.getById(req.params.id, req.user!.organizationId);
+      const patient = await patientService.getById(req.params.id as string, req.user!.organizationId);
       sendSuccess(res, patient, "Patient fetched");
     } catch (error) {
       next(error);
@@ -34,7 +34,7 @@ export class PatientController {
 
   async update(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const patient = await patientService.update(req.params.id, req.body, req.user!.organizationId);
+      const patient = await patientService.update(req.params.id as string, req.body, req.user!.organizationId);
       sendSuccess(res, patient, "Patient updated");
     } catch (error) {
       next(error);

@@ -27,7 +27,7 @@ export class ConsultationController {
 
   async getByPatient(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const consultations = await consultationService.getByPatient(req.params.patientId);
+      const consultations = await consultationService.getByPatient(req.params.patientId as string);
       sendSuccess(res, consultations, "Patient consultations fetched");
     } catch (error) {
       next(error);

@@ -25,7 +25,7 @@ export class PharmacyController {
 
   async updateStock(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const medicine = await pharmacyService.updateStock(req.params.id, req.body.stock, req.user!.organizationId);
+      const medicine = await pharmacyService.updateStock(req.params.id as string, req.body.stock, req.user!.organizationId);
       sendSuccess(res, medicine, "Stock updated");
     } catch (error) {
       next(error);
