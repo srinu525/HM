@@ -42,6 +42,108 @@ model Organization {
   patients      Patient[]
   medicines     Medicine[]
   notifications Notification[]
+  subscriptions Subscription[]
+  auditLogs     AuditLog[]
+  labTests      LabTest[]
+  labResults    LabResult[]
+  invoices      Invoice[]
+  payments      Payment[]
+}
+
+model Plan {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  price       Float    @default(0)
+  maxUsers    Int      @default(5)
+  maxPatients Int      @default(100)
+  features    String[]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id             String   @id @default(uuid())
+  startDate      DateTime @default(now())
+  endDate        DateTime?
+  status         String   @default("ACTIVE")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  planId         String
+  plan           Plan     @relation(fields: [planId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  invoices Invoice[]
+
+  @@unique([organizationId, planId])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  action         String
+  entity         String
+  entityId       String?
+  oldValue       Json?
+  newValue       Json?
+  ipAddress      String?
+  userAgent      String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         String?
+  createdAt      DateTime @default(now())
+}
+
+model FileAttachment {
+  id             String   @id @default(uuid())
+  filename       String
+  originalName   String
+  mimeType       String
+  size           Int
+  path           String
+  entity         String
+  entityId       String
+  organizationId String
+  uploadedById   String?
+  createdAt      DateTime @default(now())
+
+  @@unique([entity, entityId, filename])
+}
+
+model LabTest {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float    @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  results LabResult[]
+}
+
+model LabResult {
+  id        String   @id @default(uuid())
+  result    Json
+  notes     String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  labTestId String
+  labTest   LabTest  @relation(fields: [labTestId], references: [id])
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  doctorId  String
+  doctor    User     @relation(fields: [doctorId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 }
 
 model User {
@@ -61,6 +163,7 @@ model User {
   consultations     Consultation[]
   doctorAppointments Appointment[]  @relation("DoctorAppointments")
   notifications     Notification[]
+  labResults        LabResult[]
 
   @@unique([email, organizationId])
 }
@@ -84,6 +187,9 @@ model Patient {
   appointments  Appointment[]
   prescriptions Prescription[]
   sales         Sale[]
+  labResults    LabResult[]
+  invoices      Invoice[]
+  payments      Payment[]
 
   @@unique([patientId, organizationId])
 }
@@ -157,6 +263,9 @@ model Medicine {
   description String?
   price       Float
   stock       Int      @default(0)
+  expiryDate  DateTime?
+  batchNumber String?
+  reorderLevel Int     @default(10)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -203,4 +312,56 @@ model Notification {
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model Invoice {
+  id             String   @id @default(uuid())
+  invoiceNumber  String   @unique
+  amount         Float
+  tax            Float    @default(0)
+  total          Float
+  description    String?
+  status         String   @default("DRAFT")
+  dueDate        DateTime?
+  paidAt         DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  patientId      String?
+  patient        Patient? @relation(fields: [patientId], references: [id])
+
+  items InvoiceItem[]
+  payments Payment[]
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid())
+  description String
+  quantity    Int     @default(1)
+  unitPrice   Float
+  total       Float
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model Payment {
+  id             String   @id @default(uuid())
+  amount         Float
+  method         String   @default("CASH")
+  reference      String?
+  notes          String?
+  status         String   @default("COMPLETED")
+  createdAt      DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  invoiceId      String?
+  invoice        Invoice? @relation(fields: [invoiceId], references: [id])
+  patientId      String?
+  patient        Patient? @relation(fields: [patientId], references: [id])
 }

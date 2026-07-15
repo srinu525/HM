@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FileText, Printer, Filter, User, Stethoscope } from "lucide-react";
+import { FileText, Printer, Filter, User, Stethoscope, Download } from "lucide-react";
 
 interface Prescription {
   id: string;
@@ -139,6 +139,22 @@ export default function PrescriptionsPage() {
       win.document.write(printContent);
       win.document.close();
       win.print();
+    }
+  };
+
+  const handleDownloadPdf = async (prescription: Prescription) => {
+    try {
+      const res = await api.get(`/pharmacy/prescriptions/${prescription.id}/pdf`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `prescription-${prescription.patient.patientId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download PDF:", error);
     }
   };
 
@@ -278,6 +294,14 @@ export default function PrescriptionsPage() {
                       >
                         <Printer className="h-4 w-4 mr-1" />
                         Print
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownloadPdf(rx)}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        PDF
                       </Button>
                     </div>
                   </div>

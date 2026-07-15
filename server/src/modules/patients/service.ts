@@ -16,7 +16,7 @@ export class PatientService {
     });
   }
 
-  async getAll(search: string | undefined, organizationId: string) {
+  async getAll(search: string | undefined, organizationId: string, page = 1, limit = 20) {
     const where: any = { organizationId };
     if (search) {
       where.OR = [
@@ -26,7 +26,16 @@ export class PatientService {
         { email: { contains: search, mode: "insensitive" as const } },
       ];
     }
-    return prisma.patient.findMany({ where, orderBy: { createdAt: "desc" }, take: 50 });
+    const [patients, total] = await Promise.all([
+      prisma.patient.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.patient.count({ where }),
+    ]);
+    return { patients, total, page, limit };
   }
 
   async getById(id: string, organizationId: string) {

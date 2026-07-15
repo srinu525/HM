@@ -86,26 +86,109 @@ D:\HM
 
 ---
 
+## Phase 2 (Complete Core) ✅
+
+### 1. TypeScript Errors — Fixed
+- Created `client/types/lucide-react.d.ts` — type declarations for all icon imports
+- Created `client/types/tailwind-merge.d.ts` — type declaration for tailwind-merge
+- Fixed nullable `string | null` → `v ?? ""` in Select component props (3 locations)
+- Fixed server socket.io type: explicit `http.Server` param in `initSocket()`
+- Fixed `appointments/service.ts` doctorId shorthand + stray `data.doctorId` reference
+- Added `as string` cast to all `req.params.*` across 6 controllers
+
+### 2. Role-Based Route Guards — Complete
+**Server-side:**
+- Added `authorize()` to stats routes (`ADMIN`, `SUPER_ADMIN`, `RECEPTIONIST`)
+- Added `authorize()` to unprotected appointment routes (`ADMIN`, `RECEPTIONIST`, `DOCTOR`)
+- Added `authorize()` to pharmacy read routes (`ADMIN`, `PHARMACIST`, `DOCTOR`)
+
+**Client-side:**
+- Created `client/components/route-guard.tsx` — route→role mapping with prefix matching
+- Applied `RouteGuard` wrapper in `client/app/dashboard/layout.tsx`
+- Shows Access Denied page with back-to-dashboard button for unauthorized routes
+- Route map covers 15+ routes across all sections
+
+### 3. Organization Management UI — Complete
+**Server:**
+- Created `server/src/modules/organizations/` — service, controller, routes
+- `GET /` — list all orgs with user/patient counts
+- `GET /:id` — org detail
+- `POST /` — create org (slug uniqueness enforced)
+- `PUT /:id` — update org
+- `GET /:id/stats` — org statistics (users, patients, medicines, notifications counts)
+- All routes `SUPER_ADMIN` only
+
+**Client:**
+- Created `client/app/dashboard/organizations/page.tsx` — full CRUD UI
+- List view with user/patient counts, active/inactive badges
+- Create dialog (name, slug, email, phone, address)
+- Edit dialog, Stats dialog, Activate/Deactivate toggle
+- Added "Organizations" sidebar link for `SUPER_ADMIN`
+- Added to route guard: `SUPER_ADMIN` only
+
+### 4. Dashboard Widgets — Complete
+**Role-specific home pages:**
+- **ADMIN/SUPER_ADMIN**: Existing analytics dashboard (patients, appointments, revenue, charts)
+- **DOCTOR**: Queue count, completed consultations, queue list with status badges
+- **PHARMACIST**: Low stock alerts, today's sales count, revenue, low-stock medicine list
+- **RECEPTIONIST**: Today's appointments, queue count, quick-action cards (register, book, queue)
+- Created `client/components/role-dashboards.tsx` with 3 role-specific components
+- Updated `client/app/dashboard/page.tsx` to render based on `user.role`
+
+### 5. Notifications — Complete
+**Real-time via Socket.IO:**
+- Server `notificationService.create()` now emits `notification:new` to user's room
+- Added `GET /notifications/unread-count` endpoint
+- Created `client/hooks/use-socket.ts` — Socket.IO client hook
+- Updated `NotificationBell` to use Socket.IO for real-time (replaces polling-only approach)
+- Fixed notifications page: removed non-existent `title` field, uses `message` directly
+
+### 6. Patient Search — Complete
+- Created `client/hooks/use-debounce.ts` — 300ms debounce hook
+- Server: `PatientService.getAll()` now accepts `page` + `limit` params
+- Server: Returns `{ patients, total, page, limit }` with `sendPaginated()`
+- Client: Debounced search input (fires 300ms after last keystroke)
+- Client: Page controls (prev/next) with page indicator
+- Auto-reset to page 1 when search changes
+
+### 7. Prescription PDF Generation — Complete
+**Server:**
+- Installed `pdfkit` + `@types/pdfkit`
+- Created `server/src/modules/pharmacy/pdf.ts` — generates A4 PDF prescription
+  - Organization header (name, address, phone, email)
+  - Patient details section
+  - Doctor/date/token info
+  - Medications table (medicine, dosage, duration, qty, instructions)
+  - Notes section
+  - Footer with generation timestamp
+- Added `GET /pharmacy/prescriptions/:id/pdf` route
+- Controller streams PDF as `application/pdf` attachment
+
+**Client:**
+- Added `pharmacyApi.downloadPrescriptionPdf(id)` to `lib/api.ts`
+- Added "PDF" download button alongside existing "Print" button on prescriptions page
+
+---
+
 ## Roadmap
 
-### Phase 2 (Complete Core)
-1. Fix TypeScript errors (lucide-react icons, tailwind-merge types, nullable props)
-2. Role-based route guards (client-side + middleware)
-3. Organization management UI (SUPER_ADMIN)
-4. Shared `packages/` directory
-5. Dashboard widgets (role-specific home pages)
-6. Notifications (Socket.IO real-time, preferences)
-7. Patient search (debounce, pagination, history timeline)
-8. Prescription PDF generation
+### Phase 2 ✅ COMPLETE
+1. ✅ Fix TypeScript errors (lucide-react icons, tailwind-merge types, nullable props)
+2. ✅ Role-based route guards (client-side + middleware)
+3. ✅ Organization management UI (SUPER_ADMIN)
+4. ✅ Dashboard widgets (role-specific home pages)
+5. ✅ Notifications (Socket.IO real-time, unread count)
+6. ✅ Patient search (debounce, pagination)
+7. ✅ Prescription PDF generation
 
-### Phase 3 (Business Features)
-- Subscription plans (Free / Starter / Professional / Enterprise)
-- Payments & invoicing
-- Audit logs (every action tracked)
-- File uploads (patient scans, prescriptions, lab reports via Supabase Storage)
-- Reports & analytics
-- Lab module
-- Advanced inventory management
+### Phase 3 (Business Features) — In Progress
+1. ✅ Subscription plans (Free / Starter / Professional / Enterprise)
+2. ✅ Audit logs (automatic middleware, server/client CRUD, filters)
+3. ✅ File uploads (multer disk storage, upload/download/delete)
+4. ✅ Reports & analytics (date/doctor filters, summary stats, CSV export)
+5. ✅ Lab module (test management, results recording, doctor access)
+6. ✅ Advanced inventory (expiry tracking, reorder alerts, batch numbers, edit UI)
+7. ✅ Payments & invoicing (invoice CRUD, PDF generation, payment recording, stats)
 
 ### Phase 4 (Enterprise)
 - Cron jobs (night backup, appointment reminders, medicine expiry, subscription renewal)
@@ -273,13 +356,36 @@ Use OpenAPI/Swagger to auto-generate API docs from route definitions.
 - `server/src/common/errors/AppError.ts` — Typed error class
 - `server/src/middleware/auth.ts` — JWT authentication + authorization
 - `server/src/middleware/tenant.ts` — Tenant scope middleware
+- `server/src/middleware/audit.ts` — Automatic audit logging middleware
 - `server/src/middleware/errorHandler.ts` — Global error handler
 - `server/src/modules/auth/service.ts` — Auth with orgSlug login
+- `server/src/modules/organizations/` — Org CRUD (SUPER_ADMIN only)
+- `server/src/modules/pharmacy/pdf.ts` — PDF prescription generation
+- `server/src/modules/lab/` — Lab tests + results (admin/doctor)
+- `server/src/modules/plans/` — Subscription plans (SUPER_ADMIN)
+- `server/src/modules/audit-logs/` — Audit log queries (SUPER_ADMIN/ADMIN)
+- `server/src/modules/files/` — File upload/download (multer disk storage)
+- `server/src/modules/invoices/` — Invoice CRUD, payments, PDF generation
 - `server/src/modules/*/service.ts` — All services scoped by organizationId
 
 ### Client
-- `client/lib/api.ts` — Axios client, types, API functions
+- `client/lib/api.ts` — Axios client, types, API functions (includes organizationApi, billingApi, labApi)
 - `client/contexts/auth-context.tsx` — Auth state management
+- `client/hooks/use-socket.ts` — Socket.IO real-time hook
+- `client/hooks/use-debounce.ts` — Search debounce hook
+- `client/components/route-guard.tsx` — Role-based route protection
+- `client/components/role-dashboards.tsx` — Role-specific dashboard widgets
+- `client/components/notification-bell.tsx` — Real-time notification bell
+- `client/components/file-upload.tsx` — Reusable file upload/list/download/delete component
+- `client/types/lucide-react.d.ts` — Icon type declarations
 - `client/app/login/page.tsx` — Login with org slug
 - `client/app/dashboard/layout.tsx` — Sidebar navigation per role
+- `client/app/dashboard/organizations/page.tsx` — Org management (SUPER_ADMIN)
+- `client/app/dashboard/billing/page.tsx` — Subscription plans + current plan
+- `client/app/dashboard/audit-logs/page.tsx` — Audit log viewer with filters
+- `client/app/dashboard/lab/page.tsx` — Lab tests + results recording
+- `client/app/dashboard/pharmacy/inventory/page.tsx` — Inventory with expiry/reorder alerts
+- `client/app/dashboard/reports/page.tsx` — Appointment reports with CSV export
+- `client/app/dashboard/sales/page.tsx` — Sales history with CSV export
+- `client/app/dashboard/invoices/page.tsx` — Invoice management + payment recording + PDF
 - `client/lib/validations.ts` — Zod schemas with age field

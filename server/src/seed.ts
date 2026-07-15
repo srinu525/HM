@@ -83,6 +83,23 @@ async function main() {
     console.log("Super Admin user created");
   }
 
+  // Seed subscription plans
+  const plansData = [
+    { name: "Free", description: "Basic features for small clinics", price: 0, maxUsers: 3, maxPatients: 50, features: ["Basic patient management", "Appointment scheduling", "Prescription management"] },
+    { name: "Starter", description: "Essential features for growing practices", price: 999, maxUsers: 10, maxPatients: 500, features: ["Everything in Free", "Pharmacy management", "Sales tracking", "Email notifications"] },
+    { name: "Professional", description: "Advanced features for established hospitals", price: 2999, maxUsers: 50, maxPatients: 5000, features: ["Everything in Starter", "Advanced analytics", "Audit logs", "Priority support", "Custom branding"] },
+    { name: "Enterprise", description: "Full-featured for large organizations", price: 9999, maxUsers: -1, maxPatients: -1, features: ["Everything in Professional", "Unlimited users & patients", "API access", "Dedicated support", "SLA guarantee", "Custom integrations"] },
+  ];
+
+  for (const plan of plansData) {
+    await prisma.plan.upsert({
+      where: { name: plan.name },
+      update: plan,
+      create: plan,
+    });
+  }
+  console.log("Subscription plans seeded");
+
   console.log("Migration seed completed");
 }
 

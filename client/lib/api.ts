@@ -91,6 +91,9 @@ export interface MedicineData {
   description?: string;
   price: number;
   stock: number;
+  expiryDate?: string;
+  batchNumber?: string;
+  reorderLevel?: number;
 }
 
 export interface SaleItemData {
@@ -153,12 +156,17 @@ export const pharmacyApi = {
   getMedicines: (search?: string) =>
     api.get("/pharmacy/medicines", { params: { search } }),
   createMedicine: (data: MedicineData) => api.post("/pharmacy/medicines", data),
+  updateMedicine: (id: string, data: Record<string, unknown>) =>
+    api.put(`/pharmacy/medicines/${id}`, data),
   updateStock: (id: string, stock: number) =>
     api.put(`/pharmacy/medicines/${id}/stock`, { stock }),
+  getInventoryAlerts: () => api.get("/pharmacy/inventory/alerts"),
   createSale: (data: SaleData) => api.post("/pharmacy/sales", data),
   getSales: () => api.get("/pharmacy/sales"),
   getPrescriptions: (filters?: { patientId?: string; doctorId?: string; startDate?: string; endDate?: string }) =>
     api.get("/pharmacy/prescriptions", { params: filters }),
+  downloadPrescriptionPdf: (id: string) =>
+    api.get(`/pharmacy/prescriptions/${id}/pdf`, { responseType: "blob" }),
   createPrescription: (data: PrescriptionData) => api.post("/pharmacy/prescriptions", data),
 };
 
@@ -170,8 +178,19 @@ export const userApi = {
 
 export const notificationApi = {
   getAll: () => api.get("/notifications"),
+  getUnreadCount: () => api.get("/notifications/unread-count"),
   markAsRead: (id: string) => api.put(`/notifications/${id}/read`),
   markAllAsRead: () => api.put("/notifications/read-all"),
+};
+
+export const organizationApi = {
+  getAll: () => api.get("/organizations"),
+  getById: (id: string) => api.get(`/organizations/${id}`),
+  create: (data: { name: string; slug: string; email?: string; phone?: string; address?: string }) =>
+    api.post("/organizations", data),
+  update: (id: string, data: { name?: string; email?: string; phone?: string; address?: string; isActive?: boolean }) =>
+    api.put(`/organizations/${id}`, data),
+  getStats: (id: string) => api.get(`/organizations/${id}/stats`),
 };
 
 export const statsApi = {
@@ -181,4 +200,74 @@ export const statsApi = {
     api.get("/stats/appointments/history", { params: filters }),
   getSalesHistory: (filters?: { startDate?: string; endDate?: string }) =>
     api.get("/stats/sales/history", { params: filters }),
+};
+
+export interface Plan {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  maxUsers: number;
+  maxPatients: number;
+  features: string[];
+  isActive: boolean;
+  _count?: { subscriptions: number };
+}
+
+export interface Subscription {
+  id: string;
+  startDate: string;
+  endDate: string | null;
+  status: string;
+  plan: Plan;
+}
+
+export const billingApi = {
+  getPlans: () => api.get("/billing/plans"),
+  getPlan: (id: string) => api.get(`/billing/plans/${id}`),
+  createPlan: (data: Omit<Plan, "id" | "isActive" | "_count">) => api.post("/billing/plans", data),
+  updatePlan: (id: string, data: Partial<Plan>) => api.put(`/billing/plans/${id}`, data),
+  getSubscription: () => api.get("/billing/subscription"),
+  subscribe: (planId: string, months?: number) => api.post("/billing/subscription", { planId, months }),
+  cancelSubscription: (id: string) => api.put(`/billing/subscription/${id}/cancel`),
+};
+
+export const auditLogApi = {
+  getAll: (filters?: { entity?: string; action?: string; userId?: string; page?: number; limit?: number }) =>
+    api.get("/audit-logs", { params: filters }),
+};
+
+export const labApi = {
+  getTests: () => api.get("/lab/tests"),
+  createTest: (data: { name: string; description?: string; price?: number }) => api.post("/lab/tests", data),
+  updateTest: (id: string, data: { name?: string; description?: string; price?: number; isActive?: boolean }) => api.put(`/lab/tests/${id}`, data),
+  getResults: (filters?: { patientId?: string; doctorId?: string; labTestId?: string; status?: string }) =>
+    api.get("/lab/results", { params: filters }),
+  createResult: (data: { labTestId: string; patientId: string; result: Record<string, unknown>; notes?: string; status?: string }) =>
+    api.post("/lab/results", data),
+  updateResult: (id: string, data: { result?: Record<string, unknown>; notes?: string; status?: string }) =>
+    api.put(`/lab/results/${id}`, data),
+};
+
+export const invoiceApi = {
+  getAll: (filters?: { status?: string; patientId?: string }) => api.get("/invoices", { params: filters }),
+  getById: (id: string) => api.get(`/invoices/${id}`),
+  create: (data: { description?: string; patientId?: string; subscriptionId?: string; tax?: number; dueDate?: string; items: { description: string; quantity: number; unitPrice: number }[] }) =>
+    api.post("/invoices", data),
+  updateStatus: (id: string, status: string) => api.put(`/invoices/${id}/status`, { status }),
+  delete: (id: string) => api.delete(`/invoices/${id}`),
+  downloadPdf: (id: string) => api.get(`/invoices/${id}/pdf`, { responseType: "blob" }),
+  getStats: () => api.get("/invoices/stats"),
+  recordPayment: (data: { invoiceId?: string; patientId?: string; amount: number; method?: string; reference?: string; notes?: string }) =>
+    api.post("/invoices/payments", data),
+  getPayments: (filters?: { patientId?: string; method?: string }) =>
+    api.get("/invoices/payments/list", { params: filters }),
+};
+
+export const fileApi = {
+  getByEntity: (entity: string, entityId: string) =>
+    api.get("/files", { params: { entity, entityId } }),
+  upload: (formData: FormData) =>
+    api.post("/files/upload", formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  delete: (id: string) => api.delete(`/files/${id}`),
 };

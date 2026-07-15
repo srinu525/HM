@@ -14,7 +14,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Pill, Search, Package, AlertTriangle, Plus } from "lucide-react";
+import {
+  AlertTriangle,
+  AlertCircle,
+  Clock,
+  Package,
+  Edit,
+  Plus,
+} from "lucide-react";
 
 interface Medicine {
   id: string;
@@ -22,298 +29,275 @@ interface Medicine {
   description: string | null;
   price: number;
   stock: number;
+  expiryDate: string | null;
+  batchNumber: string | null;
+  reorderLevel: number;
   isActive: boolean;
+}
+
+interface InventoryAlerts {
+  lowStock: { id: string; name: string; stock: number; reorderLevel: number }[];
+  expiringSoon: { id: string; name: string; expiryDate: string; stock: number }[];
+  expired: { id: string; name: string; expiryDate: string; stock: number }[];
 }
 
 export default function InventoryPage() {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [alerts, setAlerts] = useState<InventoryAlerts | null>(null);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [stockDialogOpen, setStockDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
-
-  const [medicineForm, setMedicineForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    stock: "",
+  const [editForm, setEditForm] = useState({
+    name: "", description: "", price: "", stock: "", reorderLevel: "", expiryDate: "", batchNumber: "",
   });
 
-  const [stockForm, setStockForm] = useState({ id: "", stock: "" });
-
-  const fetchMedicines = async (q?: string) => {
-    try {
-      const res = await api.get("/pharmacy/medicines", { params: { search: q || undefined } });
-      setMedicines(res.data.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   useEffect(() => {
-    fetchMedicines();
+    loadData();
   }, []);
 
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    fetchMedicines(value);
-  };
-
-  const handleAddMedicine = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
+  const loadData = async () => {
     try {
-      await api.post("/pharmacy/medicines", {
-        name: medicineForm.name,
-        description: medicineForm.description || undefined,
-        price: parseFloat(medicineForm.price),
-        stock: parseInt(medicineForm.stock),
-      });
-      setMessage("Medicine added successfully!");
-      setMedicineForm({ name: "", description: "", price: "", stock: "" });
-      setAddDialogOpen(false);
-      fetchMedicines(search);
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setMessage(error.response?.data?.message || "Failed to add medicine");
-    } finally {
-      setLoading(false);
-    }
+      const [medsRes, alertsRes] = await Promise.all([
+        api.get("/pharmacy/medicines"),
+        api.get("/pharmacy/inventory/alerts"),
+      ]);
+      setMedicines(medsRes.data.data);
+      setAlerts(alertsRes.data.data);
+    } catch (e) { console.error(e); }
+    setLoading(false);
   };
 
-  const handleUpdateStock = async (e: React.FormEvent) => {
+  const handleEdit = (med: Medicine) => {
+    setSelectedMedicine(med);
+    setEditForm({
+      name: med.name,
+      description: med.description || "",
+      price: String(med.price),
+      stock: String(med.stock),
+      reorderLevel: String(med.reorderLevel),
+      expiryDate: med.expiryDate ? med.expiryDate.split("T")[0] : "",
+      batchNumber: med.batchNumber || "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage("");
+    if (!selectedMedicine) return;
     try {
-      await api.put(`/pharmacy/medicines/${stockForm.id}/stock`, {
-        stock: parseInt(stockForm.stock),
+      await api.put(`/pharmacy/medicines/${selectedMedicine.id}`, {
+        name: editForm.name,
+        description: editForm.description || undefined,
+        price: Number(editForm.price),
+        stock: Number(editForm.stock),
+        reorderLevel: Number(editForm.reorderLevel),
+        expiryDate: editForm.expiryDate || undefined,
+        batchNumber: editForm.batchNumber || undefined,
       });
-      setMessage("Stock updated successfully!");
-      setStockDialogOpen(false);
-      setSelectedMedicine(null);
-      fetchMedicines(search);
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setMessage(error.response?.data?.message || "Failed to update stock");
-    } finally {
-      setLoading(false);
-    }
+      setEditDialogOpen(false);
+      loadData();
+    } catch (e) { console.error(e); }
   };
 
-  const lowStockCount = medicines.filter((m) => m.stock < 10).length;
-  const totalValue = medicines.reduce((sum, m) => sum + m.price * m.stock, 0);
+  const filtered = medicines.filter(m =>
+    m.name.toLowerCase().includes(search.toLowerCase()) ||
+    (m.batchNumber && m.batchNumber.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  const expiryStatus = (expiryDate: string | null) => {
+    if (!expiryDate) return null;
+    const exp = new Date(expiryDate);
+    const now = new Date();
+    if (exp < now) return <Badge className="bg-red-100 text-red-700"><AlertCircle className="h-3 w-3 mr-1" />Expired</Badge>;
+    const thirtyDays = new Date(now); thirtyDays.setDate(thirtyDays.getDate() + 30);
+    if (exp <= thirtyDays) return <Badge className="bg-yellow-100 text-yellow-700"><Clock className="h-3 w-3 mr-1" />Expiring Soon</Badge>;
+    return <Badge className="bg-green-100 text-green-700">Valid</Badge>;
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Medicine Inventory</h1>
-          <p className="text-gray-600 mt-1">Manage medicine stock and catalog</p>
-        </div>
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogTrigger render={<Button />}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Medicine
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add New Medicine</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAddMedicine} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Medicine Name *</Label>
-                <Input
-                  value={medicineForm.name}
-                  onChange={(e) => setMedicineForm({ ...medicineForm, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Input
-                  value={medicineForm.description}
-                  onChange={(e) => setMedicineForm({ ...medicineForm, description: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Price (₹) *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={medicineForm.price}
-                    onChange={(e) => setMedicineForm({ ...medicineForm, price: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Stock *</Label>
-                  <Input
-                    type="number"
-                    value={medicineForm.stock}
-                    onChange={(e) => setMedicineForm({ ...medicineForm, stock: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Adding..." : "Add Medicine"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
+        <p className="text-gray-600 mt-1">Track stock levels, expiry dates, and reorder alerts</p>
       </div>
 
-      {message && (
-        <div
-          className={`p-3 rounded-md text-sm ${
-            message.includes("success")
-              ? "bg-green-50 text-green-700"
-              : "bg-red-50 text-red-700"
-          }`}
-        >
-          {message}
+      {/* Alert Cards */}
+      {alerts && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-red-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Expired</p>
+                  <p className="text-2xl font-bold text-red-600">{alerts.expired.length}</p>
+                </div>
+              </div>
+              {alerts.expired.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {alerts.expired.map(m => (
+                    <Badge key={m.id} variant="destructive" className="text-xs">{m.name}</Badge>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-yellow-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Expiring Soon (30d)</p>
+                  <p className="text-2xl font-bold text-yellow-600">{alerts.expiringSoon.length}</p>
+                </div>
+              </div>
+              {alerts.expiringSoon.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {alerts.expiringSoon.slice(0, 3).map(m => (
+                    <Badge key={m.id} className="bg-yellow-100 text-yellow-700 text-xs">{m.name}</Badge>
+                  ))}
+                  {alerts.expiringSoon.length > 3 && <Badge className="bg-gray-100 text-gray-700 text-xs">+{alerts.expiringSoon.length - 3} more</Badge>}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-orange-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Low Stock</p>
+                  <p className="text-2xl font-bold text-orange-600">{alerts.lowStock.length}</p>
+                </div>
+              </div>
+              {alerts.lowStock.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {alerts.lowStock.slice(0, 3).map(m => (
+                    <Badge key={m.id} className="bg-orange-100 text-orange-700 text-xs">{m.name} ({m.stock})</Badge>
+                  ))}
+                  {alerts.lowStock.length > 3 && <Badge className="bg-gray-100 text-gray-700 text-xs">+{alerts.lowStock.length - 3} more</Badge>}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Package className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{medicines.length}</p>
-                <p className="text-xs text-gray-500">Total Medicines</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <Pill className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">₹{totalValue.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">Total Inventory Value</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-red-600">{lowStockCount}</p>
-                <p className="text-xs text-gray-500">Low Stock Items</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Medicine List */}
+      {/* Search & Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Pill className="h-5 w-5" />
-            Medicines ({medicines.length})
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Package className="h-5 w-5" /> All Medicines ({filtered.length})
+            </span>
+            <Input
+              placeholder="Search medicines or batch..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-64"
+            />
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search medicines..."
-              value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {medicines.length === 0 ? (
-              <div className="text-center py-12">
-                <Pill className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No medicines found</p>
-                <p className="text-sm text-gray-400 mt-1">Add medicines to get started</p>
-              </div>
-            ) : (
-              medicines.map((med) => (
-                <div
-                  key={med.id}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-sm transition-all duration-200"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-linear-to-br from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center shrink-0">
-                      <Pill className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{med.name}</p>
-                      <p className="text-sm text-gray-500">
-                        ₹{med.price.toFixed(2)}
-                        {med.description && <span className="ml-2">| {med.description}</span>}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge
-                      variant={med.stock < 10 ? "destructive" : "secondary"}
-                      className="px-3 py-1"
-                    >
-                      Stock: {med.stock}
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedMedicine(med);
-                        setStockForm({ id: med.id, stock: med.stock.toString() });
-                        setStockDialogOpen(true);
-                      }}
-                    >
-                      Update Stock
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          {loading ? (
+            <p className="text-center text-gray-500 py-8">Loading...</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No medicines found</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-gray-500">
+                    <th className="pb-2 font-medium">Name</th>
+                    <th className="pb-2 font-medium">Batch</th>
+                    <th className="pb-2 font-medium text-right">Price</th>
+                    <th className="pb-2 font-medium text-right">Stock</th>
+                    <th className="pb-2 font-medium text-right">Reorder</th>
+                    <th className="pb-2 font-medium">Expiry</th>
+                    <th className="pb-2 font-medium">Status</th>
+                    <th className="pb-2 font-medium text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((med) => (
+                    <tr key={med.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 font-medium">{med.name}</td>
+                      <td className="py-3 text-gray-500">{med.batchNumber || "-"}</td>
+                      <td className="py-3 text-right">₹{med.price}</td>
+                      <td className={`py-3 text-right font-medium ${med.stock <= med.reorderLevel ? "text-orange-600" : "text-gray-900"}`}>
+                        {med.stock}
+                      </td>
+                      <td className="py-3 text-right text-gray-500">{med.reorderLevel}</td>
+                      <td className="py-3">
+                        {med.expiryDate ? new Date(med.expiryDate).toLocaleDateString("en-IN") : "-"}
+                      </td>
+                      <td className="py-3">{expiryStatus(med.expiryDate)}</td>
+                      <td className="py-3 text-right">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(med)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Stock Update Dialog */}
-      <Dialog open={stockDialogOpen} onOpenChange={setStockDialogOpen}>
-        <DialogContent className="max-w-sm">
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogTrigger render={<div />}>
+          <span />
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              Update Stock - {selectedMedicine?.name}
-            </DialogTitle>
+            <DialogTitle>Edit Medicine</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleUpdateStock} className="space-y-4">
+          <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
-              <Label>Current Stock: {selectedMedicine?.stock}</Label>
-              <Label>New Stock Quantity *</Label>
-              <Input
-                type="number"
-                value={stockForm.stock}
-                onChange={(e) => setStockForm({ ...stockForm, stock: e.target.value })}
-                required
-              />
+              <Label>Name *</Label>
+              <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Updating..." : "Update Stock"}
-            </Button>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Price</Label>
+                <Input type="number" value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Stock</Label>
+                <Input type="number" value={editForm.stock} onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Reorder Level</Label>
+                <Input type="number" value={editForm.reorderLevel} onChange={(e) => setEditForm({ ...editForm, reorderLevel: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Batch Number</Label>
+                <Input value={editForm.batchNumber} onChange={(e) => setEditForm({ ...editForm, batchNumber: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Expiry Date</Label>
+              <Input type="date" value={editForm.expiryDate} onChange={(e) => setEditForm({ ...editForm, expiryDate: e.target.value })} />
+            </div>
+            <Button type="submit" className="w-full">Save Changes</Button>
           </form>
         </DialogContent>
       </Dialog>

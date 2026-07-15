@@ -16,6 +16,12 @@ import appointmentRoutes from "./modules/appointments/routes";
 import consultationRoutes from "./modules/consultations/routes";
 import pharmacyRoutes from "./modules/pharmacy/routes";
 import notificationRoutes from "./modules/notifications/routes";
+import organizationRoutes from "./modules/organizations/routes";
+import planRoutes from "./modules/plans/routes";
+import auditLogRoutes from "./modules/audit-logs/routes";
+import fileRoutes from "./modules/files/routes";
+import labRoutes from "./modules/lab/routes";
+import invoiceRoutes from "./modules/invoices/routes";
 import statsRoutes from "./modules/stats/routes";
 
 const app = express();
@@ -41,6 +47,12 @@ app.use("/api/v1/appointments", authenticate, tenantScope, appointmentRoutes);
 app.use("/api/v1/consultations", authenticate, tenantScope, consultationRoutes);
 app.use("/api/v1/pharmacy", authenticate, tenantScope, pharmacyRoutes);
 app.use("/api/v1/notifications", authenticate, tenantScope, notificationRoutes);
+app.use("/api/v1/organizations", authenticate, tenantScope, organizationRoutes);
+app.use("/api/v1/billing", authenticate, tenantScope, planRoutes);
+app.use("/api/v1/audit-logs", authenticate, tenantScope, auditLogRoutes);
+app.use("/api/v1/files", authenticate, tenantScope, fileRoutes);
+app.use("/api/v1/lab", authenticate, tenantScope, labRoutes);
+app.use("/api/v1/invoices", authenticate, tenantScope, invoiceRoutes);
 app.use("/api/v1/stats", authenticate, tenantScope, statsRoutes);
 
 // Backward compatibility - old /api/ routes

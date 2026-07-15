@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, User, Stethoscope, FileText } from "lucide-react";
+import { Calendar, User, Stethoscope, FileText, Download } from "lucide-react";
 import { format } from "date-fns";
 
 interface Appointment {
@@ -102,6 +102,28 @@ export default function ReportsPage() {
     }
   };
 
+  const totalFees = appointments.reduce((sum, apt) => sum + (apt.consultationFee || 0), 0);
+
+  const exportCSV = () => {
+    const headers = ["Date", "Token", "Patient", "Phone", "Doctor", "Fee", "Status", "Diagnosis"];
+    const rows = appointments.map(apt => [
+      format(new Date(apt.date), "yyyy-MM-dd"),
+      apt.token,
+      apt.patient.name,
+      apt.patient.phone,
+      `Dr. ${apt.doctor.name}`,
+      apt.consultationFee || 0,
+      apt.status,
+      apt.consultation?.diagnosis || "",
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.map(v => `"${v}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `appointments-${format(new Date(), "yyyy-MM-dd")}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -112,7 +134,14 @@ export default function ReportsPage() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Filters</span>
+            {appointments.length > 0 && (
+              <Button variant="outline" size="sm" onClick={exportCSV}>
+                <Download className="h-4 w-4 mr-1" /> Export CSV
+              </Button>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -166,6 +195,28 @@ export default function ReportsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-sm font-medium text-gray-600">Appointments</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{appointments.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-sm font-medium text-gray-600">Completed</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">{appointments.filter(a => a.status === "COMPLETED").length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">₹{totalFees.toFixed(0)}</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Results */}
       <Card>

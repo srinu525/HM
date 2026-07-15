@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
 import { patientService } from "./service";
 import { AuthRequest } from "../../middleware/auth";
-import { sendSuccess, sendCreated } from "../../common/response";
+import { sendSuccess, sendCreated, sendPaginated } from "../../common/response";
 
 export class PatientController {
   async create(req: AuthRequest, res: Response, next: NextFunction) {
@@ -16,8 +16,10 @@ export class PatientController {
   async getAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const search = req.query.search as string;
-      const patients = await patientService.getAll(search, req.user!.organizationId);
-      sendSuccess(res, patients, "Patients fetched");
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const { patients, total } = await patientService.getAll(search, req.user!.organizationId, page, limit);
+      sendPaginated(res, patients, total, page, limit, "Patients fetched");
     } catch (error) {
       next(error);
     }

@@ -1,50 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5000";
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") || "http://localhost:5000";
 
-export function useSocket() {
+export function useSocket(userId: string | undefined, onNotification: (notification: unknown) => void) {
   const socketRef = useRef<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [lowStockAlerts, setLowStockAlerts] = useState<any[]>([]);
+
+  const handleNotification = useCallback((notification: unknown) => {
+    onNotification(notification);
+  }, [onNotification]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
-    
-    if (!token || !userStr) return;
+    if (!userId) return;
 
-    const user = JSON.parse(userStr);
-    
-    socketRef.current = io(SOCKET_URL, {
-      auth: { token },
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"],
+      autoConnect: true,
     });
 
-    socketRef.current.on("connect", () => {
-      setIsConnected(true);
-      socketRef.current?.emit("join", user.id);
+    socket.on("connect", () => {
+      socket.emit("join", userId);
     });
 
-    socketRef.current.on("disconnect", () => {
-      setIsConnected(false);
-    });
+    socket.on("notification:new", handleNotification);
 
-    socketRef.current.on("low-stock-alert", (alert) => {
-      setLowStockAlerts((prev) => [...prev, alert]);
-    });
+    socketRef.current = socket;
 
     return () => {
-      socketRef.current?.disconnect();
+      socket.off("notification:new", handleNotification);
+      socket.disconnect();
+      socketRef.current = null;
     };
-  }, []);
+  }, [userId, handleNotification]);
 
-  const clearAlerts = () => setLowStockAlerts([]);
-
-  return {
-    isConnected,
-    lowStockAlerts,
-    clearAlerts,
-  };
+  return socketRef;
 }

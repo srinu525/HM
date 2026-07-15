@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, Users, Pill } from "lucide-react";
+import { Calendar, Users, Pill, Download } from "lucide-react";
 import { format } from "date-fns";
 import { generateInvoice } from "@/lib/pdf-generator";
 
@@ -81,11 +81,35 @@ export default function SalesPage() {
 
   const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
 
+  const exportCSV = () => {
+    const headers = ["Date", "Patient", "Patient ID", "Items", "Total"];
+    const rows = sales.map(sale => [
+      format(new Date(sale.createdAt), "yyyy-MM-dd HH:mm"),
+      sale.patient.name,
+      sale.patient.patientId || "",
+      sale.items.map(i => `${i.medicineName} x${i.quantity}`).join("; "),
+      sale.total,
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.map(v => `"${v}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `sales-${format(new Date(), "yyyy-MM-dd")}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Sales History</h1>
-        <p className="text-gray-600 mt-1">View and download invoices</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Sales History</h1>
+          <p className="text-gray-600 mt-1">View and download invoices</p>
+        </div>
+        {sales.length > 0 && (
+          <Button variant="outline" size="sm" onClick={exportCSV}>
+            <Download className="h-4 w-4 mr-1" /> Export CSV
+          </Button>
+        )}
       </div>
 
       {/* Stats */}

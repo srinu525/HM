@@ -1,10 +1,10 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { DashboardHeader } from "@/components/dashboard-header";
+import { RouteGuard } from "@/components/route-guard";
 import {
   Users,
   Calendar,
@@ -14,11 +14,18 @@ import {
   LayoutDashboard,
   FileText,
   ShoppingCart,
+  Building2,
+  CreditCard,
+  History,
+  TestTube,
 } from "lucide-react";
 
 const roleLinks: Record<string, { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[]> = {
   SUPER_ADMIN: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard/organizations", label: "Organizations", icon: Building2 },
+    { href: "/dashboard/billing", label: "Plans & Billing", icon: CreditCard },
+    { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History },
     { href: "/dashboard/users", label: "Users", icon: Users },
     { href: "/dashboard/reception", label: "Reception", icon: Calendar },
     { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
@@ -29,10 +36,14 @@ const roleLinks: Record<string, { href: string; label: string; icon: React.Compo
     { href: "/dashboard/pharmacy", label: "Pharmacy", icon: Pill },
     { href: "/dashboard/reports", label: "Appointment Reports", icon: FileText },
     { href: "/dashboard/sales", label: "Sales Reports", icon: ShoppingCart },
+    { href: "/dashboard/lab", label: "Lab", icon: TestTube },
+    { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
     { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   ],
   ADMIN: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard/billing", label: "Subscription", icon: CreditCard },
+    { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History },
     { href: "/dashboard/users", label: "Users", icon: Users },
     { href: "/dashboard/reception", label: "Reception", icon: Calendar },
     { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
@@ -43,6 +54,8 @@ const roleLinks: Record<string, { href: string; label: string; icon: React.Compo
     { href: "/dashboard/pharmacy", label: "Pharmacy", icon: Pill },
     { href: "/dashboard/reports", label: "Appointment Reports", icon: FileText },
     { href: "/dashboard/sales", label: "Sales Reports", icon: ShoppingCart },
+    { href: "/dashboard/lab", label: "Lab", icon: TestTube },
+    { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
     { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   ],
   RECEPTIONIST: [
@@ -52,11 +65,13 @@ const roleLinks: Record<string, { href: string; label: string; icon: React.Compo
     { href: "/dashboard/reception/appointments", label: "New Appointment", icon: Calendar },
     { href: "/dashboard/reception/queue", label: "Queue View", icon: Users },
     { href: "/dashboard/reception/appointments-list", label: "Appointments List", icon: FileText },
+    { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
     { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   ],
   DOCTOR: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/dashboard/doctor", label: "Consultations", icon: Stethoscope },
+    { href: "/dashboard/lab", label: "Lab", icon: TestTube },
     { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   ],
   PHARMACIST: [
@@ -75,26 +90,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isLoading } = useAuth();
-  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, isLoading, router]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user) return null;
-
-  const links = roleLinks[user.role] || [];
+  const links = user ? (roleLinks[user.role] || []) : [];
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -147,7 +145,7 @@ export default function DashboardLayout({
         <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-auto">
           <div className="p-4 lg:p-8">
-            {children}
+            <RouteGuard>{children}</RouteGuard>
           </div>
         </main>
       </div>

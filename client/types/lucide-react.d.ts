@@ -49,4 +49,21 @@ declare module "lucide-react" {
   export const Home: Icon;
   export const BarChart3: Icon;
   export const AlertCircle: Icon;
+  export const ShieldAlert: Icon;
+  export const Pencil: Icon;
+  export const ChevronLeft: Icon;
+  export const ChevronRight: Icon;
+  export const Download: Icon;
+  export const CreditCard: Icon;
+  export const History: Icon;
+  export const Paperclip: Icon;
+  export const Upload: Icon;
+  export const Trash2: Icon;
+  export const Image: Icon;
+  export const File: Icon;
+  export const TestTube: Icon;
+  export const IndianRupee: Icon;
+  export const CheckCircle: Icon;
+  export const Clock: Icon;
+  export const AlertCircle: Icon;
 }

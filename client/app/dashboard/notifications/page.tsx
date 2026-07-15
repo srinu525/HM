@@ -10,7 +10,6 @@ import { Bell, CheckCheck } from "lucide-react";
 
 interface Notification {
   id: string;
-  title: string;
   message: string;
   type: string;
   isRead: boolean;
@@ -99,12 +98,11 @@ export default function NotificationsPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900">{notification.title}</h3>
                       {!notification.isRead && (
                         <Badge variant="default" className="bg-blue-600">New</Badge>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
+                    <p className="text-sm text-gray-900 mb-2">{notification.message}</p>
                     <p className="text-xs text-gray-400">
                       {new Date(notification.createdAt).toLocaleString("en-IN")}
                     </p>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
+import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Search, Edit, CheckCircle2 } from "lucide-react";
+import { UserPlus, Search, Edit, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Patient {
   id: string;
@@ -39,10 +40,14 @@ interface Patient {
 export default function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const limit = 20;
 
   const [form, setForm] = useState({
     name: "",
@@ -54,22 +59,24 @@ export default function PatientsPage() {
     address: "",
   });
 
-  const fetchPatients = async (q?: string) => {
+  const fetchPatients = useCallback(async (q: string, p: number) => {
     try {
-      const res = await api.get("/patients", { params: { search: q || undefined } });
+      const res = await api.get("/patients", { params: { search: q || undefined, page: p, limit } });
       setPatients(res.data.data);
+      setTotal(res.data.meta?.total || 0);
     } catch (error) {
       console.error(error);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchPatients();
-  }, []);
+    fetchPatients(debouncedSearch, page);
+  }, [debouncedSearch, page, fetchPatients]);
+
+  useEffect(() => { setPage(1); }, [debouncedSearch]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
-    fetchPatients(value);
   };
 
   const resetForm = () => {
@@ -126,7 +133,7 @@ export default function PatientsPage() {
       }
       setDialogOpen(false);
       resetForm();
-      fetchPatients(search);
+      fetchPatients(debouncedSearch, page);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setMessage(error.response?.data?.message || "Failed to save patient");
@@ -280,7 +287,7 @@ export default function PatientsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Patients ({patients.length})</span>
+            <span>Patients ({total})</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -340,6 +347,31 @@ export default function PatientsPage() {
               ))
             )}
           </div>
+          {total > limit && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-500">
+                Page {page} of {Math.ceil(total / limit)}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 1}
+                  onClick={() => setPage(p => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= Math.ceil(total / limit)}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { useSocket } from "@/hooks/use-socket";
 import { notificationApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +17,20 @@ interface Notification {
 }
 
 export function NotificationBell() {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const handleNewNotification = useCallback((notification: unknown) => {
+    const n = notification as Notification;
+    setNotifications((prev) => [n, ...prev]);
+  }, []);
+
+  useSocket(user?.id, handleNewNotification);
 
   useEffect(() => {
     fetchNotifications();

@@ -1,15 +1,25 @@
 import { prisma } from "../../utils/prisma";
 import { AppError } from "../../common/errors/AppError";
+import { getIO } from "../../socket";
 
 export class NotificationService {
   async create(userId: string, message: string, type: string, organizationId: string) {
-    return prisma.notification.create({ data: { userId, message, type, organizationId } });
+    const notification = await prisma.notification.create({ data: { userId, message, type, organizationId } });
+    try {
+      getIO().to(`user:${userId}`).emit("notification:new", notification);
+    } catch { /* socket not initialized */ }
+    return notification;
   }
 
   async getByUser(userId: string) {
     return prisma.notification.findMany({
-      where: { userId }, orderBy: { createdAt: "desc" }, take: 20,
+      where: { userId }, orderBy: { createdAt: "desc" }, take: 50,
     });
+  }
+
+  async getUnreadCount(userId: string) {
+    const count = await prisma.notification.count({ where: { userId, isRead: false } });
+    return { count };
   }
 
   async markAsRead(id: string) {

@@ -10,14 +10,41 @@ export class PharmacyService {
     return prisma.medicine.findMany({ where, orderBy: { name: "asc" } });
   }
 
-  async createMedicine(data: { name: string; description?: string; price: number; stock: number }, organizationId: string) {
-    return prisma.medicine.create({ data: { ...data, organizationId } });
+  async createMedicine(data: { name: string; description?: string; price: number; stock: number; expiryDate?: string; batchNumber?: string; reorderLevel?: number }, organizationId: string) {
+    const medicineData: any = { ...data, organizationId };
+    if (data.expiryDate) medicineData.expiryDate = new Date(data.expiryDate);
+    return prisma.medicine.create({ data: medicineData });
   }
 
   async updateStock(id: string, stock: number, organizationId: string) {
     const medicine = await prisma.medicine.findFirst({ where: { id, organizationId } });
     if (!medicine) { throw AppError.notFound("Medicine not found"); }
     return prisma.medicine.update({ where: { id }, data: { stock } });
+  }
+
+  async updateMedicine(id: string, data: { name?: string; description?: string; price?: number; stock?: number; expiryDate?: string; batchNumber?: string; reorderLevel?: number; isActive?: boolean }, organizationId: string) {
+    const medicine = await prisma.medicine.findFirst({ where: { id, organizationId } });
+    if (!medicine) { throw AppError.notFound("Medicine not found"); }
+    const updateData: any = { ...data };
+    if (data.expiryDate) updateData.expiryDate = new Date(data.expiryDate);
+    return prisma.medicine.update({ where: { id }, data: updateData });
+  }
+
+  async getInventoryAlerts(organizationId: string) {
+    const allMedicines = await prisma.medicine.findMany({
+      where: { organizationId, isActive: true },
+      select: { id: true, name: true, stock: true, reorderLevel: true, expiryDate: true, batchNumber: true, price: true },
+    });
+
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now); thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const ninetyDaysFromNow = new Date(now); ninetyDaysFromNow.setDate(ninetyDaysFromNow.getDate() + 90);
+
+    const lowStock = allMedicines.filter(m => m.stock <= m.reorderLevel);
+    const expiringSoon = allMedicines.filter(m => m.expiryDate && m.expiryDate <= ninetyDaysFromNow);
+    const expired = allMedicines.filter(m => m.expiryDate && m.expiryDate < now);
+
+    return { lowStock, expiringSoon, expired };
   }
 
   async createSale(data: { patientId: string; items: { medicineId: string; quantity: number }[] }, organizationId: string) {
