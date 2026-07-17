@@ -18,6 +18,7 @@ import {
   FileText,
   Activity,
   TrendingUp,
+  Building2,
 } from "lucide-react";
 
 interface QueueItem {
@@ -349,6 +350,167 @@ export function ReceptionistDashboard() {
             <CardContent className="p-4 flex items-center gap-3">
               <Clock className="h-5 w-5 text-yellow-600" />
               <span className="font-medium">View Queue</span>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+interface SystemStats {
+  totalOrgs: number;
+  activeOrgs: number;
+  totalUsers: number;
+  activeUsers: number;
+  totalPatients: number;
+  todayAppointments: number;
+  todayRevenue: number;
+  recentPatients: number;
+  totalMedicines: number;
+}
+
+export function SuperAdminDashboard() {
+  const [stats, setStats] = useState<SystemStats | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await api.get("/stats/system");
+        setStats(res.data.data);
+      } catch (e) { console.error(e); }
+    }
+    load();
+  }, []);
+
+  if (!stats) {
+    return (
+      <div className="animate-pulse space-y-4">
+        {[1, 2, 3].map(i => (
+          <Card key={i}><CardContent className="p-6 h-24 bg-gray-100 rounded" /></Card>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Organizations</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalOrgs}</p>
+                <p className="text-xs text-gray-500 mt-1">{stats.activeOrgs} active</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalUsers}</p>
+                <p className="text-xs text-gray-500 mt-1">{stats.activeUsers} active</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Patients</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalPatients}</p>
+                <p className="text-xs text-gray-500 mt-1">+{stats.recentPatients} this month</p>
+              </div>
+              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
+                <Activity className="w-6 h-6 text-cyan-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Today&apos;s Revenue</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">₹{stats.todayRevenue.toLocaleString()}</p>
+                <p className="text-xs text-gray-500 mt-1">{stats.todayAppointments} appointments today</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Medicines</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalMedicines}</p>
+                <p className="text-xs text-gray-500 mt-1">Across all organizations</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <Pill className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Today&apos;s Appointments</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.todayAppointments}</p>
+                <p className="text-xs text-gray-500 mt-1">System-wide</p>
+              </div>
+              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-yellow-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link href="/dashboard/organizations">
+          <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              <span className="font-medium">Manage Organizations</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/dashboard/billing">
+          <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Pill className="h-5 w-5 text-purple-600" />
+              <span className="font-medium">Plans & Billing</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/dashboard/users">
+          <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Users className="h-5 w-5 text-green-600" />
+              <span className="font-medium">Manage Users</span>
             </CardContent>
           </Card>
         </Link>

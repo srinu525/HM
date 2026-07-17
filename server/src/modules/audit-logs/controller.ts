@@ -13,7 +13,7 @@ export class AuditLogController {
         action: req.query.action as string,
         userId: req.query.userId as string,
       };
-      const result = await auditLogService.getByOrganization(req.user!.organizationId, filters, page, limit);
+      const result = await auditLogService.getByOrganization(req.user!.organizationId as string, filters, page, limit);
       sendSuccess(res, result, "Audit logs fetched");
     } catch (error) {
       next(error);

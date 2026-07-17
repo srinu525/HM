@@ -63,7 +63,27 @@ async function main() {
   }
   console.log(`Updated ${notifications.length} notifications`);
 
-  // Seed admin user if not exists
+  // Seed SUPER_ADMIN (no organization — platform admin)
+  const existingSuperAdmin = await prisma.user.findFirst({
+    where: { email: "superadmin@hms.com", role: "SUPER_ADMIN" },
+  });
+
+  if (!existingSuperAdmin) {
+    const hashedPassword = await bcrypt.hash("admin123", 10);
+    await prisma.user.create({
+      data: {
+        name: "Platform Admin",
+        email: "superadmin@hms.com",
+        password: hashedPassword,
+        role: "SUPER_ADMIN",
+        phone: "1234567890",
+        organizationId: null,
+      },
+    });
+    console.log("Super Admin user created: superadmin@hms.com / admin123");
+  }
+
+  // Seed hospital ADMIN (belongs to default organization)
   const existingAdmin = await prisma.user.findFirst({
     where: { email: "admin@hospital.com", organizationId: org.id },
   });
@@ -72,15 +92,15 @@ async function main() {
     const hashedPassword = await bcrypt.hash("admin123", 10);
     await prisma.user.create({
       data: {
-        name: "Super Admin",
+        name: "Hospital Admin",
         email: "admin@hospital.com",
         password: hashedPassword,
-        role: "SUPER_ADMIN",
+        role: "ADMIN",
         phone: "1234567890",
         organizationId: org.id,
       },
     });
-    console.log("Super Admin user created");
+    console.log("Hospital Admin user created: admin@hospital.com / admin123");
   }
 
   // Seed subscription plans

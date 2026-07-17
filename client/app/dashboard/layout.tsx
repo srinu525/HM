@@ -21,30 +21,9 @@ import {
 } from "lucide-react";
 
 const roleLinks: Record<string, { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[]> = {
-  SUPER_ADMIN: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/dashboard/organizations", label: "Organizations", icon: Building2 },
-    { href: "/dashboard/billing", label: "Plans & Billing", icon: CreditCard },
-    { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History },
-    { href: "/dashboard/users", label: "Users", icon: Users },
-    { href: "/dashboard/reception", label: "Reception", icon: Calendar },
-    { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
-    { href: "/dashboard/reception/appointments", label: "New Appointment", icon: Calendar },
-    { href: "/dashboard/reception/queue", label: "Queue View", icon: Users },
-    { href: "/dashboard/reception/appointments-list", label: "Appointments List", icon: FileText },
-    { href: "/dashboard/doctor", label: "Doctors", icon: Stethoscope },
-    { href: "/dashboard/pharmacy", label: "Pharmacy", icon: Pill },
-    { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill },
-    { href: "/dashboard/pharmacy/sales", label: "Pharmacy Sales", icon: ShoppingCart },
-    { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
-    { href: "/dashboard/reports", label: "Appointment Reports", icon: FileText },
-    { href: "/dashboard/sales", label: "Sales Reports", icon: ShoppingCart },
-    { href: "/dashboard/lab", label: "Lab", icon: TestTube },
-    { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
-    { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-  ],
   ADMIN: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard/organizations", label: "Organizations", icon: Building2 },
     { href: "/dashboard/billing", label: "Subscription", icon: CreditCard },
     { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History },
     { href: "/dashboard/users", label: "Users", icon: Users },

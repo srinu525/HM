@@ -27,7 +27,7 @@ export default function SuperAdminLoginPage() {
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(userData));
-      router.push("/dashboard");
+      router.push("/admin");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Login failed";
       setError(message);

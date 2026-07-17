@@ -22,7 +22,7 @@ export function auditLog(entity: string) {
             newValue: req.body,
             ipAddress: req.ip,
             userAgent: req.get("User-Agent"),
-            organizationId: req.user.organizationId,
+            organizationId: req.user.organizationId as string,
             userId: req.user.id,
           }).catch(() => {});
         }

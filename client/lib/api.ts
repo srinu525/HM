@@ -200,6 +200,8 @@ export const statsApi = {
     api.get("/stats/appointments/history", { params: filters }),
   getSalesHistory: (filters?: { startDate?: string; endDate?: string }) =>
     api.get("/stats/sales/history", { params: filters }),
+  getSystemStats: () => api.get("/stats/system"),
+  getSystemAnalytics: () => api.get("/stats/system/analytics"),
 };
 
 export interface Plan {
@@ -270,4 +272,24 @@ export const fileApi = {
   upload: (formData: FormData) =>
     api.post("/files/upload", formData, { headers: { "Content-Type": "multipart/form-data" } }),
   delete: (id: string) => api.delete(`/files/${id}`),
+};
+
+export const adminApi = {
+  getStats: () => api.get("/admin/stats"),
+  getRevenue: () => api.get("/admin/revenue"),
+  getOrganizations: () => api.get("/admin/organizations"),
+  getOrganization: (id: string) => api.get(`/admin/organizations/${id}`),
+  createOrganization: (data: { name: string; slug: string; email?: string; phone?: string; address?: string }) =>
+    api.post("/admin/organizations", data),
+  updateOrganization: (id: string, data: { name?: string; email?: string; phone?: string; address?: string; isActive?: boolean }) =>
+    api.put(`/admin/organizations/${id}`, data),
+  getUsers: () => api.get("/admin/users"),
+  updateUser: (id: string, data: { isActive?: boolean; role?: string }) =>
+    api.put(`/admin/users/${id}`, data),
+  getFeatureFlags: (orgId: string) => api.get(`/admin/organizations/${orgId}/feature-flags`),
+  setFeatureFlag: (orgId: string, key: string, isEnabled: boolean) =>
+    api.put(`/admin/organizations/${orgId}/feature-flags`, { key, isEnabled }),
+  getSettings: () => api.get("/admin/settings"),
+  setSetting: (key: string, value: string, category?: string) =>
+    api.put("/admin/settings", { key, value, category }),
 };

@@ -9,7 +9,7 @@ export class FileController {
     try {
       if (!req.file) return next(new Error("No file uploaded"));
       const { entity, entityId } = req.body;
-      const record = await fileService.upload(req.file, entity, entityId, req.user!.organizationId, req.user!.id);
+      const record = await fileService.upload(req.file, entity, entityId, req.user!.organizationId as string, req.user!.id);
       sendCreated(res, record, "File uploaded");
     } catch (error) {
       next(error);
@@ -19,7 +19,7 @@ export class FileController {
   async getByEntity(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { entity, entityId } = req.query;
-      const files = await fileService.getByEntity(entity as string, entityId as string, req.user!.organizationId);
+      const files = await fileService.getByEntity(entity as string, entityId as string, req.user!.organizationId as string);
       sendSuccess(res, files, "Files fetched");
     } catch (error) {
       next(error);
@@ -28,7 +28,7 @@ export class FileController {
 
   async download(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const fileInfo = await fileService.getFilePath(req.params.id as string, req.user!.organizationId);
+      const fileInfo = await fileService.getFilePath(req.params.id as string, req.user!.organizationId as string);
       if (!fs.existsSync(fileInfo.path)) {
         return next(new Error("File not found on disk"));
       }
@@ -42,7 +42,7 @@ export class FileController {
 
   async remove(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      await fileService.delete(req.params.id as string, req.user!.organizationId);
+      await fileService.delete(req.params.id as string, req.user!.organizationId as string);
       sendSuccess(res, { deleted: true }, "File deleted");
     } catch (error) {
       next(error);

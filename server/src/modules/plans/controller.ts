@@ -42,7 +42,7 @@ export class PlanController {
 
   async subscribe(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const sub = await planService.subscribe(req.user!.organizationId, req.body.planId, req.body.months);
+      const sub = await planService.subscribe(req.user!.organizationId as string, req.body.planId, req.body.months);
       sendCreated(res, sub, "Subscribed successfully");
     } catch (error) {
       next(error);
@@ -51,7 +51,7 @@ export class PlanController {
 
   async getOrgSubscription(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const sub = await planService.getOrgSubscription(req.user!.organizationId);
+      const sub = await planService.getOrgSubscription(req.user!.organizationId as string);
       sendSuccess(res, sub, "Subscription fetched");
     } catch (error) {
       next(error);
@@ -60,7 +60,7 @@ export class PlanController {
 
   async cancel(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const sub = await planService.cancel(req.params.id as string, req.user!.organizationId);
+      const sub = await planService.cancel(req.params.id as string, req.user!.organizationId as string);
       sendSuccess(res, sub, "Subscription cancelled");
     } catch (error) {
       next(error);

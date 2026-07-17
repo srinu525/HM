@@ -89,7 +89,6 @@ export class AuthService {
   async loginSuperAdmin(email: string, password: string) {
     const user = await prisma.user.findFirst({
       where: { email, role: "SUPER_ADMIN" },
-      include: { organization: { select: { id: true, name: true, slug: true } } },
     });
 
     if (!user) {
@@ -113,8 +112,8 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
-        organizationId: user.organizationId,
-        organization: user.organization,
+        organizationId: null,
+        organization: null,
       },
       token,
     };
@@ -143,13 +142,15 @@ export class AuthService {
     return user;
   }
 
-  private generateToken(user: { id: string; email: string; role: string; organizationId: string }) {
-    const payload = {
+  private generateToken(user: { id: string; email: string; role: string; organizationId?: string | null }) {
+    const payload: Record<string, unknown> = {
       id: user.id,
       email: user.email,
       role: user.role,
-      organizationId: user.organizationId,
     };
+    if (user.organizationId) {
+      payload.organizationId = user.organizationId;
+    }
     return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions);
   }
 }

@@ -7,7 +7,7 @@ import { sendSuccess, sendCreated } from "../../common/response";
 export class InvoiceController {
   async getAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const invoices = await invoiceService.getAll(req.user!.organizationId, {
+      const invoices = await invoiceService.getAll(req.user!.organizationId as string, {
         status: req.query.status as string,
         patientId: req.query.patientId as string,
       });
@@ -17,42 +17,42 @@ export class InvoiceController {
 
   async getById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const invoice = await invoiceService.getById(req.params.id as string, req.user!.organizationId);
+      const invoice = await invoiceService.getById(req.params.id as string, req.user!.organizationId as string);
       sendSuccess(res, invoice, "Invoice fetched");
     } catch (error) { next(error); }
   }
 
   async create(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const invoice = await invoiceService.create(req.body, req.user!.organizationId);
+      const invoice = await invoiceService.create(req.body, req.user!.organizationId as string);
       sendCreated(res, invoice, "Invoice created");
     } catch (error) { next(error); }
   }
 
   async updateStatus(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const invoice = await invoiceService.updateStatus(req.params.id as string, req.body.status, req.user!.organizationId);
+      const invoice = await invoiceService.updateStatus(req.params.id as string, req.body.status, req.user!.organizationId as string);
       sendSuccess(res, invoice, "Invoice updated");
     } catch (error) { next(error); }
   }
 
   async delete(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      await invoiceService.delete(req.params.id as string, req.user!.organizationId);
+      await invoiceService.delete(req.params.id as string, req.user!.organizationId as string);
       sendSuccess(res, null, "Invoice deleted");
     } catch (error) { next(error); }
   }
 
   async recordPayment(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const payment = await invoiceService.recordPayment(req.body, req.user!.organizationId);
+      const payment = await invoiceService.recordPayment(req.body, req.user!.organizationId as string);
       sendCreated(res, payment, "Payment recorded");
     } catch (error) { next(error); }
   }
 
   async getPayments(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const payments = await invoiceService.getPayments(req.user!.organizationId, {
+      const payments = await invoiceService.getPayments(req.user!.organizationId as string, {
         patientId: req.query.patientId as string,
         method: req.query.method as string,
       });
@@ -62,16 +62,16 @@ export class InvoiceController {
 
   async getStats(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const stats = await invoiceService.getStats(req.user!.organizationId);
+      const stats = await invoiceService.getStats(req.user!.organizationId as string);
       sendSuccess(res, stats, "Invoice stats fetched");
     } catch (error) { next(error); }
   }
 
   async downloadPdf(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const pdf = await generateInvoicePdf(req.params.id as string, req.user!.organizationId);
+      const pdf = await generateInvoicePdf(req.params.id as string, req.user!.organizationId as string);
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename=invoice-${req.params.id}.pdf`);
+      res.setHeader("Content-Disposition", `attachment; filename=invoice-${req.params.id as string}.pdf`);
       res.send(pdf);
     } catch (error) { next(error); }
   }

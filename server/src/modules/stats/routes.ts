@@ -3,11 +3,13 @@ import { statsController } from "./controller";
 import { authorize } from "../../middleware/auth";
 
 const router = Router();
-router.use(authorize("ADMIN", "SUPER_ADMIN", "RECEPTIONIST"));
 
-router.get("/", statsController.getBasicStats);
-router.get("/analytics", statsController.getAnalytics);
-router.get("/appointments/history", statsController.getAppointmentHistory);
-router.get("/sales/history", statsController.getSalesHistory);
+router.get("/", authorize("ADMIN", "SUPER_ADMIN", "RECEPTIONIST"), statsController.getBasicStats);
+router.get("/analytics", authorize("ADMIN", "SUPER_ADMIN", "RECEPTIONIST"), statsController.getAnalytics);
+router.get("/appointments/history", authorize("ADMIN", "SUPER_ADMIN", "RECEPTIONIST"), statsController.getAppointmentHistory);
+router.get("/sales/history", authorize("ADMIN", "SUPER_ADMIN", "RECEPTIONIST"), statsController.getSalesHistory);
+
+router.get("/system", authorize("SUPER_ADMIN"), statsController.getSystemStats);
+router.get("/system/analytics", authorize("SUPER_ADMIN"), statsController.getSystemAnalytics);
 
 export default router;

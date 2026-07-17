@@ -30,6 +30,7 @@ import fileRoutes from "./modules/files/routes";
 import labRoutes from "./modules/lab/routes";
 import invoiceRoutes from "./modules/invoices/routes";
 import statsRoutes from "./modules/stats/routes";
+import adminRoutes from "./modules/admin/routes";
 import "./modules/notifications/events";
 
 const app = express();
@@ -65,6 +66,7 @@ app.get("/api/metrics", (_req, res) => {
 });
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/admin", authenticate, adminRoutes);
 app.use("/api/v1/users", authenticate, tenantScope, userRoutes);
 app.use("/api/v1/patients", authenticate, tenantScope, patientRoutes);
 app.use("/api/v1/appointments", authenticate, tenantScope, appointmentRoutes);

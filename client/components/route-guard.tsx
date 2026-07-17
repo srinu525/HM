@@ -8,7 +8,15 @@ import { ShieldAlert } from "lucide-react";
 const ALL_ROLES = ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST"];
 
 const routeRoles: Record<string, string[]> = {
-  "/dashboard/organizations": ["SUPER_ADMIN"],
+  "/admin": ["SUPER_ADMIN"],
+  "/admin/organizations": ["SUPER_ADMIN"],
+  "/admin/users": ["SUPER_ADMIN"],
+  "/admin/revenue": ["SUPER_ADMIN"],
+  "/admin/feature-flags": ["SUPER_ADMIN"],
+  "/admin/subscriptions": ["SUPER_ADMIN"],
+  "/admin/analytics": ["SUPER_ADMIN"],
+  "/admin/settings": ["SUPER_ADMIN"],
+  "/dashboard/organizations": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/billing": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/audit-logs": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/users": ["SUPER_ADMIN", "ADMIN"],

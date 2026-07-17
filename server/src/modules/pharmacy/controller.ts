@@ -8,7 +8,7 @@ export class PharmacyController {
   async getAllMedicines(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const search = req.query.search as string;
-      const medicines = await pharmacyService.getAllMedicines(search, req.user!.organizationId);
+      const medicines = await pharmacyService.getAllMedicines(search, req.user!.organizationId as string);
       sendSuccess(res, medicines, "Medicines fetched");
     } catch (error) {
       next(error);
@@ -17,7 +17,7 @@ export class PharmacyController {
 
   async createMedicine(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const medicine = await pharmacyService.createMedicine(req.body, req.user!.organizationId);
+      const medicine = await pharmacyService.createMedicine(req.body, req.user!.organizationId as string);
       sendCreated(res, medicine, "Medicine added");
     } catch (error) {
       next(error);
@@ -26,7 +26,7 @@ export class PharmacyController {
 
   async updateStock(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const medicine = await pharmacyService.updateStock(req.params.id as string, req.body.stock, req.user!.organizationId);
+      const medicine = await pharmacyService.updateStock(req.params.id as string, req.body.stock, req.user!.organizationId as string);
       sendSuccess(res, medicine, "Stock updated");
     } catch (error) {
       next(error);
@@ -35,7 +35,7 @@ export class PharmacyController {
 
   async createSale(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const sale = await pharmacyService.createSale(req.body, req.user!.organizationId);
+      const sale = await pharmacyService.createSale(req.body, req.user!.organizationId as string);
       sendCreated(res, sale, "Sale recorded");
     } catch (error) {
       next(error);
@@ -44,7 +44,7 @@ export class PharmacyController {
 
   async getSales(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const sales = await pharmacyService.getSales(req.user!.organizationId);
+      const sales = await pharmacyService.getSales(req.user!.organizationId as string);
       sendSuccess(res, sales, "Sales fetched");
     } catch (error) {
       next(error);
@@ -59,7 +59,7 @@ export class PharmacyController {
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
       };
-      const prescriptions = await pharmacyService.getPrescriptions(filters, req.user!.organizationId);
+      const prescriptions = await pharmacyService.getPrescriptions(filters, req.user!.organizationId as string);
       sendSuccess(res, prescriptions, "Prescriptions fetched");
     } catch (error) {
       next(error);
@@ -68,7 +68,7 @@ export class PharmacyController {
 
   async createPrescription(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const prescription = await pharmacyService.createPrescription(req.body, req.user!.organizationId);
+      const prescription = await pharmacyService.createPrescription(req.body, req.user!.organizationId as string);
       sendCreated(res, prescription, "Prescription created");
     } catch (error) {
       next(error);
@@ -77,9 +77,9 @@ export class PharmacyController {
 
   async downloadPrescriptionPdf(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const pdf = await generatePrescriptionPdf(req.params.id as string, req.user!.organizationId);
+      const pdf = await generatePrescriptionPdf(req.params.id as string, req.user!.organizationId as string);
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename=prescription-${req.params.id}.pdf`);
+      res.setHeader("Content-Disposition", `attachment; filename=prescription-${req.params.id as string}.pdf`);
       res.send(pdf);
     } catch (error) {
       next(error);
@@ -88,7 +88,7 @@ export class PharmacyController {
 
   async updateMedicine(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const medicine = await pharmacyService.updateMedicine(req.params.id as string, req.body, req.user!.organizationId);
+      const medicine = await pharmacyService.updateMedicine(req.params.id as string, req.body, req.user!.organizationId as string);
       sendSuccess(res, medicine, "Medicine updated");
     } catch (error) {
       next(error);
@@ -97,7 +97,7 @@ export class PharmacyController {
 
   async getInventoryAlerts(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const alerts = await pharmacyService.getInventoryAlerts(req.user!.organizationId);
+      const alerts = await pharmacyService.getInventoryAlerts(req.user!.organizationId as string);
       sendSuccess(res, alerts, "Inventory alerts fetched");
     } catch (error) {
       next(error);
