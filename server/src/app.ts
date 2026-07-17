@@ -3,12 +3,19 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import { createServer } from "http";
+import swaggerJsdoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env";
 import { logger } from "./common/logger";
 import { initSocket } from "./socket";
 import { errorHandler } from "./middleware/errorHandler";
 import { authenticate, authorize } from "./middleware/auth";
 import { tenantScope } from "./middleware/tenant";
+import { requestId } from "./middleware/request-id";
+import { metricsMiddleware } from "./middleware/metrics";
+import { metrics } from "./services/metrics";
+import { startCronJobs, stopCronJobs } from "./cron";
+import swaggerOptions from "./config/swagger";
 import authRoutes from "./modules/auth/routes";
 import userRoutes from "./modules/users/routes";
 import patientRoutes from "./modules/patients/routes";
@@ -23,12 +30,15 @@ import fileRoutes from "./modules/files/routes";
 import labRoutes from "./modules/lab/routes";
 import invoiceRoutes from "./modules/invoices/routes";
 import statsRoutes from "./modules/stats/routes";
+import "./modules/notifications/events";
 
 const app = express();
 const httpServer = createServer(app);
 
 initSocket(httpServer, env.CORS_ORIGIN);
 
+app.use(requestId);
+app.use(metricsMiddleware);
 app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(morgan("combined", {
@@ -36,8 +46,22 @@ app.use(morgan("combined", {
 }));
 app.use(express.json());
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: "HM API Documentation",
+  customCss: ".swagger-ui .topbar { display: none }",
+}));
+app.get("/api/docs.json", (_req, res) => {
+  res.json(swaggerSpec);
+});
+
+app.get("/api/health", async (_req, res) => {
+  const health = await metrics.getHealth();
+  res.status(health.status === "unhealthy" ? 503 : 200).json(health);
+});
+
+app.get("/api/metrics", (_req, res) => {
+  res.json(metrics.getStats());
 });
 
 app.use("/api/v1/auth", authRoutes);
@@ -67,8 +91,26 @@ app.use("/api/stats", authenticate, tenantScope, statsRoutes);
 
 app.use(errorHandler);
 
+if (env.CRON_ENABLED) {
+  startCronJobs();
+}
+
+const gracefulShutdown = () => {
+  logger.info("Shutting down gracefully...");
+  stopCronJobs();
+  httpServer.close(() => {
+    logger.info("HTTP server closed");
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+};
+
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
+
 httpServer.listen(env.PORT, () => {
-  logger.info({ port: env.PORT, env: env.NODE_ENV }, "Server running");
+  logger.info({ port: env.PORT, env: env.NODE_ENV, cron: env.CRON_ENABLED }, "Server running");
+  logger.info({ url: `http://localhost:${env.PORT}/api/docs` }, "API docs available");
 });
 
 export default app;

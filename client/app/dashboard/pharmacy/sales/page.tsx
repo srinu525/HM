@@ -202,6 +202,7 @@ export default function SalesPage() {
                 <Select
                   value={billingForm.patientId}
                   onValueChange={(v) => v && setBillingForm({ patientId: v })}
+                  items={Object.fromEntries(patients.map(p => [p.id, `${p.name} (${p.patientId})${p.phone ? ` - ${p.phone}` : ""}`]))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select patient" />

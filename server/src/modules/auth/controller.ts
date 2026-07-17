@@ -24,6 +24,16 @@ export class AuthController {
     }
   }
 
+  async loginSuperAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { email, password } = req.body;
+      const result = await authService.loginSuperAdmin(email, password);
+      sendSuccess(res, result, "Login successful");
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getProfile(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const user = await authService.getProfile(req.user!.id);

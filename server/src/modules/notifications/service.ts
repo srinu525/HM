@@ -22,7 +22,14 @@ export class NotificationService {
     return { count };
   }
 
-  async markAsRead(id: string) {
+  async markAsRead(id: string, userId: string) {
+    const notification = await prisma.notification.findUnique({ where: { id } });
+    if (!notification) {
+      throw new Error("Notification not found");
+    }
+    if (notification.userId !== userId) {
+      throw new Error("Not authorized to update this notification");
+    }
     return prisma.notification.update({ where: { id }, data: { isRead: true } });
   }
 

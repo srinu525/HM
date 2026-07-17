@@ -113,6 +113,7 @@ export default function AppointmentsListPage() {
               <Select
                 value={filters.doctorId}
                 onValueChange={(v) => setFilters({ ...filters, doctorId: v === "all" ? "" : (v ?? "") })}
+                items={{ all: "All doctors", ...Object.fromEntries(doctors.map(d => [d.id, d.name])) }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All doctors" />
@@ -132,6 +133,7 @@ export default function AppointmentsListPage() {
               <Select
                 value={filters.status}
                 onValueChange={(v) => setFilters({ ...filters, status: v === "all" ? "" : (v ?? "") })}
+                items={{ all: "All statuses", SCHEDULED: "Scheduled", IN_PROGRESS: "In Progress", COMPLETED: "Completed", CANCELLED: "Cancelled" }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />

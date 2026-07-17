@@ -217,7 +217,7 @@ export default function InvoicesPage() {
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span>Invoices ({filtered.length})</span>
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "")}>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "")} items={{ "": "All", DRAFT: "Draft", SENT: "Sent", PAID: "Paid", CANCELLED: "Cancelled" }}>
                 <SelectTrigger className="w-40"><SelectValue placeholder="All statuses" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All</SelectItem>
@@ -237,7 +237,7 @@ export default function InvoicesPage() {
                 <form onSubmit={handleCreateInvoice} className="space-y-4">
                   <div className="space-y-2">
                     <Label>Patient (optional)</Label>
-                    <Select value={invoiceForm.patientId} onValueChange={(v) => setInvoiceForm({ ...invoiceForm, patientId: v ?? "" })}>
+                    <Select value={invoiceForm.patientId} onValueChange={(v) => setInvoiceForm({ ...invoiceForm, patientId: v ?? "" })} items={Object.fromEntries(patients.map(p => [p.id, `${p.name} (${p.patientId})`]))}>
                       <SelectTrigger><SelectValue placeholder="Walk-in patient" /></SelectTrigger>
                       <SelectContent>
                         {patients.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.patientId})</SelectItem>)}

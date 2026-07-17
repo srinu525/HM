@@ -181,6 +181,7 @@ export default function PatientsPage() {
                   <Select
                     value={form.gender}
                     onValueChange={(v) => v && setForm({ ...form, gender: v })}
+                    items={{ MALE: "Male", FEMALE: "Female", OTHER: "Other" }}
                   >
                     <SelectTrigger>
                       <SelectValue />

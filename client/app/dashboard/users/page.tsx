@@ -94,6 +94,7 @@ export default function UsersPage() {
   };
 
   const roleColors: Record<string, string> = {
+    SUPER_ADMIN: "bg-red-100 text-red-700",
     ADMIN: "bg-red-100 text-red-700",
     DOCTOR: "bg-blue-100 text-blue-700",
     RECEPTIONIST: "bg-green-100 text-green-700",
@@ -145,7 +146,7 @@ export default function UsersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Role *</Label>
-                  <Select value={form.role} onValueChange={(v) => v && setForm({ ...form, role: v })}>
+                  <Select value={form.role} onValueChange={(v) => v && setForm({ ...form, role: v })} items={{ ADMIN: "Admin", DOCTOR: "Doctor", RECEPTIONIST: "Receptionist", PHARMACIST: "Pharmacist" }}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

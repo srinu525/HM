@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { LogOut, User, ChevronDown, Shield, Stethoscope, Pill, Calendar } from "lucide-react";
 
 const roleConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
+  SUPER_ADMIN: { label: "Super Admin", color: "bg-red-100 text-red-700", icon: Shield },
   ADMIN: { label: "Admin", color: "bg-purple-100 text-purple-700", icon: Shield },
   RECEPTIONIST: { label: "Receptionist", color: "bg-blue-100 text-blue-700", icon: Calendar },
   DOCTOR: { label: "Doctor", color: "bg-green-100 text-green-700", icon: Stethoscope },

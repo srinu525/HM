@@ -1,5 +1,6 @@
 import { prisma } from "../../utils/prisma";
 import { AppError } from "../../common/errors/AppError";
+import { eventBus } from "../../common/event-bus";
 
 export class PharmacyService {
   async getAllMedicines(search: string | undefined, organizationId: string) {
@@ -80,11 +81,10 @@ export class PharmacyService {
     });
 
     if (lowStockMedicines.length > 0) {
-      const { getIO } = await import("../../socket");
-      getIO().emit("low-stock-alert", {
-        medicines: lowStockMedicines,
-        message: `Low stock alert: ${lowStockMedicines.map(m => m.name).join(", ")}`,
-        timestamp: new Date().toISOString(),
+      eventBus.emitEvent("low-stock-alert", {
+        type: "low-stock-alert",
+        payload: { medicines: lowStockMedicines },
+        organizationId,
       });
     }
 

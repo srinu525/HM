@@ -6,6 +6,8 @@
 D:\HM
 ├── client/          Next.js 16 + Tailwind CSS (Turbopack)
 ├── server/          Express + Prisma + PostgreSQL (Supabase) + Socket.IO
+├── .github/         CI/CD workflows
+├── docker-compose.yml  Docker orchestration
 ├── packages/        Shared types, validation, config (planned)
 ├── docs/            Architecture docs (planned)
 └── AGENTS.md        This file
@@ -181,7 +183,7 @@ D:\HM
 6. ✅ Patient search (debounce, pagination)
 7. ✅ Prescription PDF generation
 
-### Phase 3 (Business Features) — In Progress
+### Phase 3 (Business Features) ✅
 1. ✅ Subscription plans (Free / Starter / Professional / Enterprise)
 2. ✅ Audit logs (automatic middleware, server/client CRUD, filters)
 3. ✅ File uploads (multer disk storage, upload/download/delete)
@@ -190,15 +192,15 @@ D:\HM
 6. ✅ Advanced inventory (expiry tracking, reorder alerts, batch numbers, edit UI)
 7. ✅ Payments & invoicing (invoice CRUD, PDF generation, payment recording, stats)
 
-### Phase 4 (Enterprise)
-- Cron jobs (night backup, appointment reminders, medicine expiry, subscription renewal)
-- Event bus (Patient Created → Notification → Audit → Socket → Email)
-- Email/SMS notifications
-- Backup & restore
-- OpenAPI/Swagger documentation
-- Monitoring & observability
-- Docker configuration
-- CI/CD pipeline
+### Phase 4 (Enterprise) ✅
+1. ✅ Cron jobs (night backup, appointment reminders, medicine expiry, subscription renewal)
+2. ✅ Event bus (EventEmitter-based decoupled architecture)
+3. ✅ Email notifications (nodemailer with HTML templates)
+4. ✅ Backup & restore (pg_dump with rotation)
+5. ✅ OpenAPI/Swagger documentation (swagger-jsdoc + swagger-ui-express)
+6. ✅ Monitoring & observability (health checks, request metrics, memory tracking)
+7. ✅ Docker configuration (Dockerfile + docker-compose.yml)
+8. ✅ CI/CD pipeline (GitHub Actions: lint, typecheck, build, Docker)
 
 ---
 
@@ -293,29 +295,39 @@ Supabase Storage Buckets:
 
 ---
 
-## Event Architecture (future)
+## Event Architecture
 
 ```
 Action (e.g. Patient Created)
   ↓
-Event Bus
+Event Bus (server/src/common/event-bus.ts)
   ├── → Notification Service → Database → UI
   ├── → Audit Log Service → Database
   ├── → Socket.IO → Real-time push
-  └── → Email/SMS Service → External
+  └── → Email Service → External (nodemailer)
 ```
+
+Events implemented:
+- `patient.created` — New patient registration
+- `appointment.created` — New appointment booked
+- `prescription.created` — Prescription issued
+- `low-stock-alert` — Medicine stock below threshold
+- `medicine.expiring` — Medicines expiring within 30 days
+- `medicine.expired` — Medicines past expiry date
+- `subscription.expiring` — Subscription expiring within 7 days
+- `subscription.expired` — Subscription expired
+- `appointment.reminder` — Daily appointment reminders
 
 ---
 
-## Scheduler (future cron jobs)
+## Scheduler (cron jobs)
 
 | Job | Schedule | Description |
 |-----|----------|-------------|
-| Night Backup | Daily 2 AM | Database backup |
+| Night Backup | Daily 2 AM | Database backup with 7-day rotation |
 | Appointment Reminder | Daily 8 AM | Notify patients of tomorrow's appointments |
-| Medicine Expiry | Weekly | Alert for expiring medicines |
-| Subscription Renewal | Daily | Check & notify upcoming renewals |
-| Daily Reports | Daily 9 PM | Auto-generate daily summary |
+| Medicine Expiry | Weekly (Mon 9 AM) | Alert for expiring medicines |
+| Subscription Renewal | Daily 7 AM | Check & notify upcoming renewals |
 
 ---
 
@@ -329,9 +341,10 @@ Makes testing easier. Services become thinner. Prisma calls isolated.
 
 ---
 
-## Recommended: API Documentation
+## API Documentation
 
-Use OpenAPI/Swagger to auto-generate API docs from route definitions.
+Swagger/OpenAPI docs available at `http://localhost:5000/api/docs` when server is running.
+JSON spec at `http://localhost:5000/api/docs.json`.
 
 ---
 
@@ -340,6 +353,8 @@ Use OpenAPI/Swagger to auto-generate API docs from route definitions.
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start dev server with tsx watch |
+| `npm run build` | Build TypeScript to dist/ |
+| `npm start` | Start production server |
 | `npm run db:generate` | Generate Prisma client |
 | `npm run db:push` | Push schema to database |
 | `npm run db:migrate` | Run Prisma migration |
@@ -349,15 +364,27 @@ Use OpenAPI/Swagger to auto-generate API docs from route definitions.
 ## Key Files
 
 ### Server
-- `server/src/app.ts` — Express entry point, route mounting, API versioning
-- `server/src/config/env.ts` — Environment config
+- `server/src/app.ts` — Express entry point, route mounting, API versioning, Swagger, metrics
+- `server/src/config/env.ts` — Environment config (includes SMTP, cron settings)
 - `server/src/common/logger.ts` — Pino logger
 - `server/src/common/response.ts` — Standard API responses
 - `server/src/common/errors/AppError.ts` — Typed error class
+- `server/src/common/event-bus.ts` — EventEmitter-based event bus for decoupled architecture
 - `server/src/middleware/auth.ts` — JWT authentication + authorization
 - `server/src/middleware/tenant.ts` — Tenant scope middleware
 - `server/src/middleware/audit.ts` — Automatic audit logging middleware
 - `server/src/middleware/errorHandler.ts` — Global error handler
+- `server/src/middleware/request-id.ts` — Request ID tracking
+- `server/src/middleware/metrics.ts` — Request metrics collection
+- `server/src/services/metrics.ts` — Health checks and metrics aggregation
+- `server/src/services/email.ts` — Nodemailer email service with HTML templates
+- `server/src/cron/index.ts` — Cron job scheduler (node-cron)
+- `server/src/cron/jobs/backup.ts` — Night database backup with rotation
+- `server/src/cron/jobs/appointment-reminder.ts` — Daily appointment reminders
+- `server/src/cron/jobs/medicine-expiry.ts` — Weekly medicine expiry check
+- `server/src/cron/jobs/subscription-renewal.ts` — Daily subscription renewal check
+- `server/src/modules/notifications/events.ts` — Event handlers for domain events
+- `server/src/config/swagger.ts` — OpenAPI/Swagger configuration
 - `server/src/modules/auth/service.ts` — Auth with orgSlug login
 - `server/src/modules/organizations/` — Org CRUD (SUPER_ADMIN only)
 - `server/src/modules/pharmacy/pdf.ts` — PDF prescription generation

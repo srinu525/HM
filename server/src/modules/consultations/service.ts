@@ -1,4 +1,5 @@
 import { prisma } from "../../utils/prisma";
+import { AppError } from "../../common/errors/AppError";
 
 export class ConsultationService {
   async create(data: { appointmentId: string; doctorId: string; diagnosis?: string; notes?: string }) {
@@ -7,7 +8,7 @@ export class ConsultationService {
     });
 
     if (!appointment) {
-      throw { statusCode: 404, message: "Appointment not found" };
+      throw AppError.notFound("Appointment not found");
     }
 
     await prisma.appointment.update({

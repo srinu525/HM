@@ -25,6 +25,15 @@ export const env = {
 
   CORS_ORIGIN: optional("CORS_ORIGIN", "http://localhost:3000"),
 
+  SMTP_HOST: optional("SMTP_HOST", ""),
+  SMTP_PORT: parseInt(optional("SMTP_PORT", "587"), 10),
+  SMTP_SECURE: optional("SMTP_SECURE", "false"),
+  SMTP_USER: optional("SMTP_USER", ""),
+  SMTP_PASS: optional("SMTP_PASS", ""),
+  SMTP_FROM: optional("SMTP_FROM", "noreply@hospital.com"),
+
+  CRON_ENABLED: optional("CRON_ENABLED", "true") === "true",
+
   get isDevelopment() {
     return this.NODE_ENV === "development";
   },

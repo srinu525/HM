@@ -281,10 +281,7 @@ export function ReceptionistDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const [apptsRes, queueRes] = await Promise.all([
-          api.get("/appointments"),
-          api.get("/appointments"),
-        ]);
+        const apptsRes = await api.get("/appointments");
         const appts = apptsRes.data.data || [];
         setStats({
           queue: appts.filter((a: QueueItem) => ["SCHEDULED", "IN_PROGRESS"].includes(a.status)).slice(0, 10),

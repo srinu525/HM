@@ -86,6 +86,40 @@ export class AuthService {
     };
   }
 
+  async loginSuperAdmin(email: string, password: string) {
+    const user = await prisma.user.findFirst({
+      where: { email, role: "SUPER_ADMIN" },
+      include: { organization: { select: { id: true, name: true, slug: true } } },
+    });
+
+    if (!user) {
+      throw AppError.unauthorized("Invalid credentials");
+    }
+
+    if (!user.isActive) {
+      throw AppError.forbidden("Account is deactivated");
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw AppError.unauthorized("Invalid credentials");
+    }
+
+    const token = this.generateToken(user);
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        organizationId: user.organizationId,
+        organization: user.organization,
+      },
+      token,
+    };
+  }
+
   async getProfile(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },

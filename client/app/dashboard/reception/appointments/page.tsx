@@ -200,6 +200,7 @@ export default function NewAppointmentPage() {
                 <Select
                   value={form.doctorId}
                   onValueChange={(v) => v && setForm({ ...form, doctorId: v })}
+                  items={Object.fromEntries(doctors.map(d => [d.id, d.name]))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select doctor" />

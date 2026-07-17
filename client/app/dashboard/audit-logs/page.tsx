@@ -66,7 +66,7 @@ export default function AuditLogsPage() {
       </div>
 
       <div className="flex gap-3">
-        <Select value={entityFilter} onValueChange={(v) => setEntityFilter(v ?? "")}>
+        <Select value={entityFilter} onValueChange={(v) => setEntityFilter(v ?? "")} items={{ all: "All Entities", Patient: "Patient", Appointment: "Appointment", Medicine: "Medicine", Sale: "Sale", Prescription: "Prescription", Organization: "Organization", User: "User" }}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="All entities" />
           </SelectTrigger>
@@ -81,7 +81,7 @@ export default function AuditLogsPage() {
             <SelectItem value="User">User</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={actionFilter} onValueChange={(v) => setActionFilter(v ?? "")}>
+        <Select value={actionFilter} onValueChange={(v) => setActionFilter(v ?? "")} items={{ all: "All Actions", CREATE: "Create", UPDATE: "Update", DELETE: "Delete" }}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="All actions" />
           </SelectTrigger>

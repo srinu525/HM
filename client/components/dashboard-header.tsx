@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/dashboard/users": "User Management",
+  "/dashboard/organizations": "Organizations",
+  "/dashboard/billing": "Plans & Billing",
+  "/dashboard/audit-logs": "Audit Logs",
   "/dashboard/reception": "Reception",
   "/dashboard/reception/patients": "Patient Registration",
   "/dashboard/reception/appointments": "New Appointment",
@@ -21,6 +24,8 @@ const pageTitles: Record<string, string> = {
   "/dashboard/pharmacy/prescriptions": "Prescriptions",
   "/dashboard/reports": "Appointment Reports",
   "/dashboard/sales": "Sales Reports",
+  "/dashboard/lab": "Lab Tests & Results",
+  "/dashboard/invoices": "Invoices & Payments",
   "/dashboard/notifications": "Notifications",
 };
 

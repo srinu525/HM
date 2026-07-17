@@ -300,6 +300,7 @@ export default function ReceptionPage() {
                     <Select
                       value={form.gender}
                       onValueChange={(v) => v && setForm({ ...form, gender: v })}
+                      items={{ MALE: "Male", FEMALE: "Female", OTHER: "Other" }}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -398,6 +399,7 @@ export default function ReceptionPage() {
                     <Select
                       value={form.doctorId}
                       onValueChange={(v) => v && setForm({ ...form, doctorId: v })}
+                      items={Object.fromEntries(doctors.map((d) => [d.id, d.name]))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select doctor" />

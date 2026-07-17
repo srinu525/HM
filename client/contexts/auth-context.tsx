@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useMemo, useSyncExternalStore, ReactNode } from "react";
+import { createContext, useContext, useState, useMemo, useCallback, useSyncExternalStore, useEffect, ReactNode } from "react";
 import { api, User } from "@/lib/api";
 
 interface AuthContextType {
@@ -38,28 +38,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const isLoading = !hydrated;
 
-  if (hydrated && user === null) {
-    const saved = getInitialUser();
-    if (saved) setUser(saved);
-  }
+  useEffect(() => {
+    if (hydrated) {
+      const saved = getInitialUser();
+      if (saved) setUser(saved);
+    }
+  }, [hydrated]);
 
-  const login = async (email: string, password: string, organizationSlug: string) => {
+  const login = useCallback(async (email: string, password: string, organizationSlug: string) => {
     const response = await api.post("/auth/login", { email, password, organizationSlug });
     const { user: userData, token } = response.data.data;
 
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
     window.location.href = "/login";
-  };
+  }, []);
 
-  const value = useMemo(() => ({ user, login, logout, isLoading }), [user, isLoading]);
+  const value = useMemo(() => ({ user, login, logout, isLoading }), [user, login, logout, isLoading]);
 
   return (
     <AuthContext.Provider value={value}>

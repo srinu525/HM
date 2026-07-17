@@ -44,7 +44,8 @@ interface Appointment {
 export default function ReportsPage() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [doctors, setDoctors] = useState<any[]>([]);
+  interface DoctorOption { id: string; name: string; role: string }
+  const [doctors, setDoctors] = useState<DoctorOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     doctorId: "",
@@ -75,7 +76,7 @@ export default function ReportsPage() {
   const loadHistory = async () => {
     setLoading(true);
     try {
-      const params: any = {};
+      const params: Record<string, string> = {};
       if (filters.doctorId) params.doctorId = filters.doctorId;
       if (filters.startDate) params.startDate = filters.startDate;
       if (filters.endDate) params.endDate = filters.endDate;
@@ -150,6 +151,7 @@ export default function ReportsPage() {
               <Select
                 value={filters.doctorId}
                 onValueChange={(v) => setFilters({ ...filters, doctorId: v ?? "" })}
+                items={{ "": "All doctors", ...Object.fromEntries(doctors.map(d => [d.id, d.name])) }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All doctors" />

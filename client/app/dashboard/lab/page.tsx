@@ -224,7 +224,7 @@ export default function LabPage() {
                   <form onSubmit={handleCreateResult} className="space-y-4">
                     <div className="space-y-2">
                       <Label>Lab Test *</Label>
-                      <Select value={resultForm.labTestId} onValueChange={(v) => setResultForm({ ...resultForm, labTestId: v ?? "" })}>
+                      <Select value={resultForm.labTestId} onValueChange={(v) => setResultForm({ ...resultForm, labTestId: v ?? "" })} items={Object.fromEntries(tests.map(t => [t.id, t.name]))}>
                         <SelectTrigger><SelectValue placeholder="Select test" /></SelectTrigger>
                         <SelectContent>
                           {tests.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
@@ -233,7 +233,7 @@ export default function LabPage() {
                     </div>
                     <div className="space-y-2">
                       <Label>Patient *</Label>
-                      <Select value={resultForm.patientId} onValueChange={(v) => setResultForm({ ...resultForm, patientId: v ?? "" })}>
+                      <Select value={resultForm.patientId} onValueChange={(v) => setResultForm({ ...resultForm, patientId: v ?? "" })} items={Object.fromEntries(patients.map(p => [p.id, `${p.name} (${p.patientId})`]))}>
                         <SelectTrigger><SelectValue placeholder="Select patient" /></SelectTrigger>
                         <SelectContent>
                           {patients.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.patientId})</SelectItem>)}
@@ -242,7 +242,7 @@ export default function LabPage() {
                     </div>
                     <div className="space-y-2">
                       <Label>Status</Label>
-                      <Select value={resultForm.status} onValueChange={(v) => setResultForm({ ...resultForm, status: v ?? "COMPLETED" })}>
+                      <Select value={resultForm.status} onValueChange={(v) => setResultForm({ ...resultForm, status: v ?? "COMPLETED" })} items={{ COMPLETED: "Completed", PENDING: "Pending" }}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="COMPLETED">Completed</SelectItem>

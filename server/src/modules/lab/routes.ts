@@ -1,10 +1,8 @@
 import { Router } from "express";
 import { labController } from "./controller";
-import { authenticate, authorize } from "../../middleware/auth";
+import { authorize } from "../../middleware/auth";
 
 const router = Router();
-
-router.use(authenticate);
 
 router.get("/tests", labController.getTests);
 router.post("/tests", authorize("ADMIN", "DOCTOR"), labController.createTest);

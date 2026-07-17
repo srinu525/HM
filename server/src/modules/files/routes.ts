@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import { fileController } from "./controller";
-import { authenticate } from "../../middleware/auth";
+// authenticate applied via app.ts mount
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -29,8 +29,6 @@ const upload = multer({
 });
 
 const router = Router();
-
-router.use(authenticate);
 
 router.post("/upload", upload.single("file"), fileController.upload);
 router.get("/", fileController.getByEntity);

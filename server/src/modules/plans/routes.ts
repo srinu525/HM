@@ -1,10 +1,8 @@
 import { Router } from "express";
 import { planController } from "./controller";
-import { authenticate, authorize } from "../../middleware/auth";
+import { authorize } from "../../middleware/auth";
 
 const router = Router();
-
-router.use(authenticate);
 
 router.get("/plans", planController.getAll);
 router.get("/plans/:id", planController.getById);
