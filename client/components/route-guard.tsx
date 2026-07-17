@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { ShieldAlert } from "lucide-react";
 
 const ALL_ROLES = ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST"];
+const HOSPITAL_ROLES = ["ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST"];
 
 const routeRoles: Record<string, string[]> = {
   "/admin": ["SUPER_ADMIN"],
@@ -16,25 +17,26 @@ const routeRoles: Record<string, string[]> = {
   "/admin/subscriptions": ["SUPER_ADMIN"],
   "/admin/analytics": ["SUPER_ADMIN"],
   "/admin/settings": ["SUPER_ADMIN"],
+  "/dashboard": HOSPITAL_ROLES,
   "/dashboard/organizations": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/billing": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/audit-logs": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/users": ["SUPER_ADMIN", "ADMIN"],
-  "/dashboard/reception": ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST"],
-  "/dashboard/reception/patients": ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST"],
-  "/dashboard/reception/appointments": ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST"],
-  "/dashboard/reception/queue": ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST", "DOCTOR"],
-  "/dashboard/reception/appointments-list": ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST"],
-  "/dashboard/doctor": ["SUPER_ADMIN", "ADMIN", "DOCTOR"],
-  "/dashboard/pharmacy": ["SUPER_ADMIN", "ADMIN", "PHARMACIST"],
-  "/dashboard/pharmacy/inventory": ["SUPER_ADMIN", "ADMIN", "PHARMACIST"],
-  "/dashboard/pharmacy/prescriptions": ["SUPER_ADMIN", "ADMIN", "PHARMACIST", "DOCTOR"],
-  "/dashboard/pharmacy/sales": ["SUPER_ADMIN", "ADMIN", "PHARMACIST"],
-  "/dashboard/reports": ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST"],
-  "/dashboard/lab": ["SUPER_ADMIN", "ADMIN", "DOCTOR"],
-  "/dashboard/invoices": ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST"],
-  "/dashboard/sales": ["SUPER_ADMIN", "ADMIN", "PHARMACIST"],
-  "/dashboard/notifications": ALL_ROLES,
+  "/dashboard/reception": ["ADMIN", "RECEPTIONIST"],
+  "/dashboard/reception/patients": ["ADMIN", "RECEPTIONIST"],
+  "/dashboard/reception/appointments": ["ADMIN", "RECEPTIONIST"],
+  "/dashboard/reception/queue": ["ADMIN", "RECEPTIONIST", "DOCTOR"],
+  "/dashboard/reception/appointments-list": ["ADMIN", "RECEPTIONIST"],
+  "/dashboard/doctor": ["ADMIN", "DOCTOR"],
+  "/dashboard/pharmacy": ["ADMIN", "PHARMACIST"],
+  "/dashboard/pharmacy/inventory": ["ADMIN", "PHARMACIST"],
+  "/dashboard/pharmacy/prescriptions": ["ADMIN", "PHARMACIST", "DOCTOR"],
+  "/dashboard/pharmacy/sales": ["ADMIN", "PHARMACIST"],
+  "/dashboard/reports": ["ADMIN", "RECEPTIONIST"],
+  "/dashboard/lab": ["ADMIN", "DOCTOR", "PHARMACIST"],
+  "/dashboard/invoices": ["ADMIN", "RECEPTIONIST"],
+  "/dashboard/sales": ["ADMIN", "PHARMACIST"],
+  "/dashboard/notifications": HOSPITAL_ROLES,
 };
 
 function getAllowedRoles(pathname: string): string[] | null {
@@ -55,7 +57,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const allowed = getAllowedRoles(pathname);
-  const isAllowed = !allowed || (user && allowed.includes(user.role));
+  const isAllowed = allowed !== null && user && allowed.includes(user.role);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -74,6 +76,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   if (!isAllowed) {
+    const homeRoute = user.role === "SUPER_ADMIN" ? "/admin" : "/dashboard";
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
         <ShieldAlert className="h-16 w-16 text-red-500" />
@@ -83,7 +86,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
           Contact your administrator if you believe this is an error.
         </p>
         <button
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push(homeRoute)}
           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           Back to Dashboard

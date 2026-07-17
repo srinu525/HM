@@ -32,7 +32,7 @@ const router = Router();
  *       200:
  *         description: Paginated patient list
  */
-router.get("/", patientController.getAll);
+router.get("/", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), patientController.getAll);
 
 /**
  * @swagger
@@ -54,7 +54,7 @@ router.get("/", patientController.getAll);
  *       404:
  *         description: Patient not found
  */
-router.get("/:id", patientController.getById);
+router.get("/:id", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), patientController.getById);
 
 /**
  * @swagger

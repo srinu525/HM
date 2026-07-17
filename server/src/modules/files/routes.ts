@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import { fileController } from "./controller";
-// authenticate applied via app.ts mount
+import { authorize } from "../../middleware/auth";
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -30,9 +30,9 @@ const upload = multer({
 
 const router = Router();
 
-router.post("/upload", upload.single("file"), fileController.upload);
-router.get("/", fileController.getByEntity);
-router.get("/:id/download", fileController.download);
-router.delete("/:id", fileController.remove);
+router.post("/upload", authorize("ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST", "SUPER_ADMIN"), upload.single("file"), fileController.upload);
+router.get("/", authorize("ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST", "SUPER_ADMIN"), fileController.getByEntity);
+router.get("/:id/download", authorize("ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST", "SUPER_ADMIN"), fileController.download);
+router.delete("/:id", authorize("ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST", "SUPER_ADMIN"), fileController.remove);
 
 export default router;

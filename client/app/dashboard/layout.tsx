@@ -55,6 +55,7 @@ const roleLinks: Record<string, { href: string; label: string; icon: React.Compo
   ],
   DOCTOR: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
     { href: "/dashboard/doctor", label: "Consultations", icon: Stethoscope },
     { href: "/dashboard/reception/queue", label: "Queue", icon: Users },
     { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
@@ -67,6 +68,7 @@ const roleLinks: Record<string, { href: string; label: string; icon: React.Compo
     { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill },
     { href: "/dashboard/pharmacy/sales", label: "Sales", icon: ShoppingCart },
     { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
+    { href: "/dashboard/lab", label: "Lab", icon: TestTube },
     { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   ],
 };
