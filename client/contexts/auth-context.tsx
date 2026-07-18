@@ -36,12 +36,14 @@ function useHydrated() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const hydrated = useHydrated();
   const [user, setUser] = useState<User | null>(null);
-  const isLoading = !hydrated;
+  const [loaded, setLoaded] = useState(false);
+  const isLoading = !hydrated || !loaded;
 
   useEffect(() => {
     if (hydrated) {
       const saved = getInitialUser();
       if (saved) setUser(saved);
+      setLoaded(true);
     }
   }, [hydrated]);
 

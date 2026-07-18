@@ -29,7 +29,7 @@ export default function SuperAdminLoginPage() {
       localStorage.setItem("user", JSON.stringify(userData));
       router.push("/admin");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Login failed";
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Login failed";
       setError(message);
     } finally {
       setIsLoading(false);

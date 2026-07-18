@@ -1,0 +1,51 @@
+import { prisma } from "../../utils/prisma";
+import { AppError } from "../../common/errors/AppError";
+import path from "path";
+import fs from "fs";
+const UPLOAD_DIR = path.resolve("uploads");
+export class FileService {
+    async upload(file, entity, entityId, organizationId, uploadedById) {
+        const record = await prisma.fileAttachment.create({
+            data: {
+                filename: file.filename,
+                originalName: file.originalname,
+                mimeType: file.mimetype,
+                size: file.size,
+                path: file.path,
+                entity,
+                entityId,
+                organizationId,
+                uploadedById,
+            },
+        });
+        return record;
+    }
+    async getByEntity(entity, entityId, organizationId) {
+        return prisma.fileAttachment.findMany({
+            where: { entity, entityId, organizationId },
+            orderBy: { createdAt: "desc" },
+        });
+    }
+    async delete(id, organizationId) {
+        const file = await prisma.fileAttachment.findFirst({
+            where: { id, organizationId },
+        });
+        if (!file)
+            throw AppError.notFound("File not found");
+        if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+        }
+        await prisma.fileAttachment.delete({ where: { id } });
+        return { deleted: true };
+    }
+    async getFilePath(id, organizationId) {
+        const file = await prisma.fileAttachment.findFirst({
+            where: { id, organizationId },
+        });
+        if (!file)
+            throw AppError.notFound("File not found");
+        return { path: file.path, mimeType: file.mimeType, originalName: file.originalName };
+    }
+}
+export const fileService = new FileService();
+//# sourceMappingURL=service.js.map
