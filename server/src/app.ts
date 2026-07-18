@@ -31,6 +31,7 @@ import labRoutes from "./modules/lab/routes";
 import invoiceRoutes from "./modules/invoices/routes";
 import statsRoutes from "./modules/stats/routes";
 import adminRoutes from "./modules/admin/routes";
+import patientPortalRoutes from "./modules/patient-portal/routes";
 import "./modules/notifications/events";
 
 const app = express();
@@ -80,6 +81,7 @@ app.use("/api/v1/files", authenticate, tenantScope, fileRoutes);
 app.use("/api/v1/lab", authenticate, tenantScope, labRoutes);
 app.use("/api/v1/invoices", authenticate, tenantScope, invoiceRoutes);
 app.use("/api/v1/stats", authenticate, tenantScope, statsRoutes);
+app.use("/api/v1/patient", patientPortalRoutes);
 
 // Backward compatibility - old /api/ routes
 app.use("/api/auth", authRoutes);

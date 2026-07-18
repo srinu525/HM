@@ -120,6 +120,19 @@ async function main() {
   }
   console.log("Subscription plans seeded");
 
+  // Set passwords for existing patients (if any) for patient portal access
+  const existingPatients = await prisma.patient.findMany({ where: { password: null as any } });
+  for (const patient of existingPatients) {
+    const hashedPassword = await bcrypt.hash("patient123", 10);
+    await prisma.patient.update({
+      where: { id: patient.id },
+      data: { password: hashedPassword },
+    });
+  }
+  if (existingPatients.length > 0) {
+    console.log(`Set passwords for ${existingPatients.length} patients (password: patient123)`);
+  }
+
   console.log("Migration seed completed");
 }
 

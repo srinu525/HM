@@ -52,7 +52,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "SUPER_ADMIN" | "ADMIN" | "RECEPTIONIST" | "DOCTOR" | "PHARMACIST";
+  role: "SUPER_ADMIN" | "ADMIN" | "RECEPTIONIST" | "DOCTOR" | "PHARMACIST" | "PATIENT";
   phone?: string;
   organizationId: string;
   organization?: Organization;
@@ -272,6 +272,38 @@ export const fileApi = {
   upload: (formData: FormData) =>
     api.post("/files/upload", formData, { headers: { "Content-Type": "multipart/form-data" } }),
   delete: (id: string) => api.delete(`/files/${id}`),
+};
+
+export interface PatientPortalAuthResponse {
+  patient: {
+    id: string;
+    patientId: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    gender: string;
+    age: number;
+    organizationId: string;
+    organization: { id: string; name: string; slug: string };
+  };
+  token: string;
+}
+
+export const patientPortalApi = {
+  login: (email: string, password: string, organizationSlug: string) =>
+    api.post<{ success: boolean; data: PatientPortalAuthResponse }>("/patient/auth/login", { email, password, organizationSlug }),
+  getProfile: () => api.get<{ success: boolean; data: any }>("/patient/profile"),
+  updateProfile: (data: { name?: string; phone?: string; address?: string; password?: string }) =>
+    api.put("/patient/profile", data),
+  getAppointments: () => api.get("/patient/appointments"),
+  bookAppointment: (data: { doctorId: string; notes?: string }) =>
+    api.post("/patient/appointments", data),
+  getDoctors: () => api.get("/patient/doctors"),
+  getPrescriptions: () => api.get("/patient/prescriptions"),
+  getLabResults: () => api.get("/patient/lab-results"),
+  getInvoices: () => api.get("/patient/invoices"),
+  payInvoice: (id: string) => api.post(`/patient/invoices/${id}/pay`),
+  downloadInvoicePdf: (id: string) => api.get(`/patient/invoices/${id}/pdf`, { responseType: "blob" }),
 };
 
 export const adminApi = {

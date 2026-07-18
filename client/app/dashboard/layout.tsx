@@ -18,58 +18,167 @@ import {
   CreditCard,
   History,
   TestTube,
+  ChevronDown,
 } from "lucide-react";
 
-const roleLinks: Record<string, { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[]> = {
+interface SidebarLink {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface SidebarGroup {
+  label: string;
+  links: SidebarLink[];
+}
+
+const roleGroups: Record<string, SidebarGroup[]> = {
   ADMIN: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/dashboard/organizations", label: "Organizations", icon: Building2 },
-    { href: "/dashboard/billing", label: "Subscription", icon: CreditCard },
-    { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History },
-    { href: "/dashboard/users", label: "Users", icon: Users },
-    { href: "/dashboard/reception", label: "Reception", icon: Calendar },
-    { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
-    { href: "/dashboard/reception/appointments", label: "New Appointment", icon: Calendar },
-    { href: "/dashboard/reception/queue", label: "Queue View", icon: Users },
-    { href: "/dashboard/reception/appointments-list", label: "Appointments List", icon: FileText },
-    { href: "/dashboard/doctor", label: "Doctors", icon: Stethoscope },
-    { href: "/dashboard/pharmacy", label: "Pharmacy", icon: Pill },
-    { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill },
-    { href: "/dashboard/pharmacy/sales", label: "Pharmacy Sales", icon: ShoppingCart },
-    { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
-    { href: "/dashboard/reports", label: "Appointment Reports", icon: FileText },
-    { href: "/dashboard/sales", label: "Sales Reports", icon: ShoppingCart },
-    { href: "/dashboard/lab", label: "Lab", icon: TestTube },
-    { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
-    { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+    {
+      label: "Main",
+      links: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+    },
+    {
+      label: "Administration",
+      links: [
+        { href: "/dashboard/organizations", label: "Organizations", icon: Building2 },
+        { href: "/dashboard/billing", label: "Subscription", icon: CreditCard },
+        { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History },
+        { href: "/dashboard/users", label: "Users", icon: Users },
+      ],
+    },
+    {
+      label: "Patient Care",
+      links: [
+        { href: "/dashboard/reception", label: "Reception", icon: Calendar },
+        { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
+        { href: "/dashboard/reception/appointments", label: "New Appointment", icon: Calendar },
+        { href: "/dashboard/reception/queue", label: "Queue View", icon: Users },
+        { href: "/dashboard/reception/appointments-list", label: "Appointments List", icon: FileText },
+        { href: "/dashboard/doctor", label: "Doctors", icon: Stethoscope },
+      ],
+    },
+    {
+      label: "Pharmacy",
+      links: [
+        { href: "/dashboard/pharmacy", label: "Overview", icon: Pill },
+        { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill },
+        { href: "/dashboard/pharmacy/sales", label: "Sales", icon: ShoppingCart },
+        { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
+      ],
+    },
+    {
+      label: "Clinical",
+      links: [
+        { href: "/dashboard/lab", label: "Lab", icon: TestTube },
+      ],
+    },
+    {
+      label: "Reports",
+      links: [
+        { href: "/dashboard/reports", label: "Appointments", icon: FileText },
+        { href: "/dashboard/sales", label: "Sales", icon: ShoppingCart },
+      ],
+    },
+    {
+      label: "Finance",
+      links: [
+        { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
+      ],
+    },
+    {
+      label: "System",
+      links: [
+        { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+      ],
+    },
   ],
   RECEPTIONIST: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/dashboard/reception", label: "Reception", icon: Calendar },
-    { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
-    { href: "/dashboard/reception/appointments", label: "New Appointment", icon: Calendar },
-    { href: "/dashboard/reception/queue", label: "Queue View", icon: Users },
-    { href: "/dashboard/reception/appointments-list", label: "Appointments List", icon: FileText },
-    { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
-    { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+    {
+      label: "Main",
+      links: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+    },
+    {
+      label: "Patient Care",
+      links: [
+        { href: "/dashboard/reception", label: "Reception", icon: Calendar },
+        { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
+        { href: "/dashboard/reception/appointments", label: "New Appointment", icon: Calendar },
+        { href: "/dashboard/reception/queue", label: "Queue View", icon: Users },
+        { href: "/dashboard/reception/appointments-list", label: "Appointments List", icon: FileText },
+      ],
+    },
+    {
+      label: "Finance",
+      links: [
+        { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
+      ],
+    },
+    {
+      label: "System",
+      links: [
+        { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+      ],
+    },
   ],
   DOCTOR: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
-    { href: "/dashboard/doctor", label: "Consultations", icon: Stethoscope },
-    { href: "/dashboard/reception/queue", label: "Queue", icon: Users },
-    { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
-    { href: "/dashboard/lab", label: "Lab", icon: TestTube },
-    { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+    {
+      label: "Main",
+      links: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+    },
+    {
+      label: "Patient Care",
+      links: [
+        { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
+        { href: "/dashboard/doctor", label: "Consultations", icon: Stethoscope },
+        { href: "/dashboard/reception/queue", label: "Queue", icon: Users },
+      ],
+    },
+    {
+      label: "Pharmacy",
+      links: [
+        { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
+      ],
+    },
+    {
+      label: "Clinical",
+      links: [
+        { href: "/dashboard/lab", label: "Lab", icon: TestTube },
+      ],
+    },
+    {
+      label: "System",
+      links: [
+        { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+      ],
+    },
   ],
   PHARMACIST: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/dashboard/pharmacy", label: "Pharmacy", icon: Pill },
-    { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill },
-    { href: "/dashboard/pharmacy/sales", label: "Sales", icon: ShoppingCart },
-    { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
-    { href: "/dashboard/lab", label: "Lab", icon: TestTube },
-    { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+    {
+      label: "Main",
+      links: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+    },
+    {
+      label: "Pharmacy",
+      links: [
+        { href: "/dashboard/pharmacy", label: "Overview", icon: Pill },
+        { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill },
+        { href: "/dashboard/pharmacy/sales", label: "Sales", icon: ShoppingCart },
+        { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
+      ],
+    },
+    {
+      label: "Clinical",
+      links: [
+        { href: "/dashboard/lab", label: "Lab", icon: TestTube },
+      ],
+    },
+    {
+      label: "System",
+      links: [
+        { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+      ],
+    },
   ],
 };
 
@@ -81,7 +190,12 @@ export default function DashboardLayout({
   const { user, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const links = user ? (roleLinks[user.role] || []) : [];
+  const groups = user ? (roleGroups[user.role] || []) : [];
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const toggleGroup = (label: string) => {
+    setExpanded((prev) => (prev === label ? null : label));
+  };
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -115,17 +229,38 @@ export default function DashboardLayout({
           </div>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition-colors duration-200"
-            >
-              <link.icon className="h-5 w-5" />
-              {link.label}
-            </Link>
-          ))}
+          {groups.map((group) => {
+            const isOpen = expanded === group.label;
+            return (
+              <div key={group.label}>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition-colors duration-200"
+                >
+                  {group.label}
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-0" : "-rotate-90"}`}
+                  />
+                </button>
+                {isOpen && (
+                  <div className="mt-0.5 space-y-0.5">
+                    {group.links.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition-colors duration-200"
+                      >
+                        <link.icon className="h-5 w-5" />
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
       </aside>
 

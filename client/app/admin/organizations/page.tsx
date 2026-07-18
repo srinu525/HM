@@ -74,11 +74,9 @@ export default function AdminOrganizationsPage() {
         <div className="flex gap-3">
           <Input placeholder="Search organizations..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-64" />
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white">
-                <Plus className="w-4 h-4 mr-2" /> New Organization
-              </Button>
-            </DialogTrigger>
+<DialogTrigger render={<Button className="bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white" />}>
+  <Plus className="w-4 h-4 mr-2" /> New Organization
+</DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader><DialogTitle>Create Organization</DialogTitle></DialogHeader>
               <div className="space-y-4">

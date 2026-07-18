@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { ShieldAlert } from "lucide-react";
 
-const ALL_ROLES = ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST"];
+const ALL_ROLES = ["SUPER_ADMIN", "ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST", "PATIENT"];
 const HOSPITAL_ROLES = ["ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST"];
 
 const routeRoles: Record<string, string[]> = {
@@ -37,6 +37,12 @@ const routeRoles: Record<string, string[]> = {
   "/dashboard/invoices": ["ADMIN", "RECEPTIONIST"],
   "/dashboard/sales": ["ADMIN", "PHARMACIST"],
   "/dashboard/notifications": HOSPITAL_ROLES,
+  "/patient": ["PATIENT"],
+  "/patient/appointments": ["PATIENT"],
+  "/patient/prescriptions": ["PATIENT"],
+  "/patient/lab-results": ["PATIENT"],
+  "/patient/invoices": ["PATIENT"],
+  "/patient/profile": ["PATIENT"],
 };
 
 function getAllowedRoles(pathname: string): string[] | null {
@@ -60,10 +66,11 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   const isAllowed = allowed !== null && user && allowed.includes(user.role);
 
   useEffect(() => {
+    console.log("RouteGuard", { pathname, user, isLoading, allowed });
     if (!isLoading && !user) {
       router.push("/login");
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, pathname, allowed]);
 
   if (isLoading) {
     return (
@@ -76,7 +83,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   if (!isAllowed) {
-    const homeRoute = user.role === "SUPER_ADMIN" ? "/admin" : "/dashboard";
+    const homeRoute = user.role === "SUPER_ADMIN" ? "/admin" : user.role === "PATIENT" ? "/patient" : "/dashboard";
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
         <ShieldAlert className="h-16 w-16 text-red-500" />

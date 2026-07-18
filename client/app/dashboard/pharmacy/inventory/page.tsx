@@ -257,7 +257,7 @@ export default function InventoryPage() {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogTrigger render={<div />}>
+        <DialogTrigger render={<button type="button" className="hidden" />}>
           <span />
         </DialogTrigger>
         <DialogContent className="max-w-md">

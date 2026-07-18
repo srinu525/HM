@@ -338,7 +338,7 @@ export default function InvoicesPage() {
 
       {/* Record Payment Dialog */}
       <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-        <DialogTrigger render={<div />}>
+        <DialogTrigger render={<button type="button" className="hidden" />}>
           <span />
         </DialogTrigger>
         <DialogContent className="max-w-sm">

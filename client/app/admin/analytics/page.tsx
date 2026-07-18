@@ -21,6 +21,10 @@ export default function AdminAnalyticsPage() {
   if (loading) return <div className="text-center py-12 text-gray-500">Loading analytics...</div>;
   if (!data) return <div className="text-center py-12 text-gray-500">Failed to load analytics</div>;
 
+  const revenue = data.revenue || [];
+  const topOrgs = data.topOrgs || [];
+  const appointmentsByStatus = data.appointmentsByStatus || [];
+
   return (
     <div>
       <div className="mb-6">
@@ -31,11 +35,11 @@ export default function AdminAnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2"><TrendingUp className="w-5 h-5" /> Monthly Revenue</h3>
-          {data.revenue.length === 0 ? (
+          {revenue.length === 0 ? (
             <p className="text-sm text-gray-500">No revenue data yet</p>
           ) : (
             <div className="space-y-2">
-              {data.revenue.slice(0, 6).map((r) => (
+              {revenue.slice(0, 6).map((r) => (
                 <div key={r.month} className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">{r.month}</span>
                   <span className="font-medium text-gray-900">₹{r.total.toLocaleString()}</span>
@@ -47,11 +51,11 @@ export default function AdminAnalyticsPage() {
 
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Top Organizations</h3>
-          {data.topOrgs.length === 0 ? (
+          {topOrgs.length === 0 ? (
             <p className="text-sm text-gray-500">No data yet</p>
           ) : (
             <div className="space-y-3">
-              {data.topOrgs.slice(0, 5).map((org, i) => (
+              {topOrgs.slice(0, 5).map((org, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div>
                     <div className="font-medium text-gray-900">{org.name}</div>
@@ -66,11 +70,11 @@ export default function AdminAnalyticsPage() {
 
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2"><Calendar className="w-5 h-5" /> Appointments by Status</h3>
-          {data.appointmentsByStatus.length === 0 ? (
+          {appointmentsByStatus.length === 0 ? (
             <p className="text-sm text-gray-500">No appointment data</p>
           ) : (
             <div className="space-y-2">
-              {data.appointmentsByStatus.map((s) => (
+              {appointmentsByStatus.map((s) => (
                 <div key={s.status} className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">{s.status}</span>
                   <span className="font-medium text-gray-900">{s.count}</span>

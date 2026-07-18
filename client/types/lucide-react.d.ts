@@ -53,7 +53,6 @@ declare module "lucide-react" {
   export const Pencil: Icon;
   export const ChevronLeft: Icon;
   export const ChevronRight: Icon;
-  export const Download: Icon;
   export const CreditCard: Icon;
   export const History: Icon;
   export const Paperclip: Icon;
@@ -63,7 +62,11 @@ declare module "lucide-react" {
   export const File: Icon;
   export const TestTube: Icon;
   export const IndianRupee: Icon;
-  export const CheckCircle: Icon;
-  export const Clock: Icon;
-  export const AlertCircle: Icon;
+  export const UserRound: Icon;
+  export const Loader2: Icon;
+  export const DollarSign: Icon;
+  export const Flag: Icon;
+  export const ToggleLeft: Icon;
+  export const ToggleRight: Icon;
+  export const Save: Icon;
 }
