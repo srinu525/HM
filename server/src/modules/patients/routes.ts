@@ -32,7 +32,7 @@ const router = Router();
  *       200:
  *         description: Paginated patient list
  */
-router.get("/", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), patientController.getAll);
+router.get("/", authorize("RECEPTIONIST", "DOCTOR"), patientController.getAll);
 
 /**
  * @swagger
@@ -54,7 +54,7 @@ router.get("/", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), patientController.
  *       404:
  *         description: Patient not found
  */
-router.get("/:id", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), patientController.getById);
+router.get("/:id", authorize("RECEPTIONIST", "DOCTOR"), patientController.getById);
 
 /**
  * @swagger
@@ -90,7 +90,7 @@ router.get("/:id", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), patientControll
  *       201:
  *         description: Patient registered
  */
-router.post("/", authorize("ADMIN", "RECEPTIONIST"), patientController.create);
+router.post("/", authorize("RECEPTIONIST"), patientController.create);
 
 /**
  * @swagger
@@ -131,6 +131,6 @@ router.post("/", authorize("ADMIN", "RECEPTIONIST"), patientController.create);
  *       404:
  *         description: Patient not found
  */
-router.put("/:id", authorize("ADMIN", "RECEPTIONIST"), patientController.update);
+router.put("/:id", authorize("RECEPTIONIST"), patientController.update);
 
 export default router;

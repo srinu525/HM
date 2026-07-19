@@ -32,7 +32,7 @@ const router = Router();
  *       201:
  *         description: Appointment booked
  */
-router.post("/", authorize("ADMIN", "RECEPTIONIST"), appointmentController.create);
+router.post("/", authorize("RECEPTIONIST"), appointmentController.create);
 
 /**
  * @swagger
@@ -46,7 +46,7 @@ router.post("/", authorize("ADMIN", "RECEPTIONIST"), appointmentController.creat
  *       200:
  *         description: List of today's appointments
  */
-router.get("/", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), appointmentController.getTodayAll);
+router.get("/", authorize("RECEPTIONIST", "DOCTOR"), appointmentController.getTodayAll);
 
 /**
  * @swagger
@@ -66,7 +66,7 @@ router.get("/", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), appointmentControl
  *       200:
  *         description: Doctor's appointments
  */
-router.get("/doctor/:doctorId", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), appointmentController.getByDoctor);
+router.get("/doctor/:doctorId", authorize("RECEPTIONIST", "DOCTOR"), appointmentController.getByDoctor);
 
 /**
  * @swagger
@@ -86,7 +86,7 @@ router.get("/doctor/:doctorId", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), ap
  *       200:
  *         description: Doctor's queue
  */
-router.get("/queue/:doctorId", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), appointmentController.getQueue);
+router.get("/queue/:doctorId", authorize("RECEPTIONIST", "DOCTOR"), appointmentController.getQueue);
 
 /**
  * @swagger
@@ -117,6 +117,6 @@ router.get("/queue/:doctorId", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), app
  *       200:
  *         description: Status updated
  */
-router.put("/:id/status", authorize("ADMIN", "RECEPTIONIST", "DOCTOR"), appointmentController.updateStatus);
+router.put("/:id/status", authorize("RECEPTIONIST", "DOCTOR"), appointmentController.updateStatus);
 
 export default router;

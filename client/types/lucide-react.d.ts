@@ -69,4 +69,17 @@ declare module "lucide-react" {
   export const ToggleLeft: Icon;
   export const ToggleRight: Icon;
   export const Save: Icon;
+  export const Phone: Icon;
+  export const PhoneCall: Icon;
+  export const MapPin: Icon;
+  export const MapPinHouse: Icon;
+  export const Building: Icon;
+  export const CalendarClock: Icon;
+  export const CalendarDays: Icon;
+  export const Database: Icon;
+  export const XCircle: Icon;
+  export const CircleX: Icon;
+  export const Server: Icon;
+  export const Ban: Icon;
+  export const Smartphone: Icon;
 }

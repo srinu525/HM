@@ -19,23 +19,28 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+let isRedirecting = false;
+
+function redirectToLogin() {
+  if (isRedirecting) return;
+  isRedirecting = true;
+  if (typeof window !== "undefined") {
+    const savedSlug = localStorage.getItem("orgSlug") || "default-hospital";
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = `/${savedSlug}/login`;
+  }
+}
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
-      }
+      redirectToLogin();
     } else if (error.response?.status === 403) {
       const msg = error.response?.data?.message || "";
       if (msg.includes("organization") || msg.includes("Not authenticated") || msg.includes("No token")) {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          window.location.href = "/login";
-        }
+        redirectToLogin();
       }
     }
     return Promise.reject(error);
@@ -306,6 +311,46 @@ export const patientPortalApi = {
   downloadInvoicePdf: (id: string) => api.get(`/patient/invoices/${id}/pdf`, { responseType: "blob" }),
 };
 
+export const departmentApi = {
+  getAll: () => api.get("/departments"),
+  getById: (id: string) => api.get(`/departments/${id}`),
+  create: (data: { name: string; description?: string; consultationFee?: number; workingHours?: string }) =>
+    api.post("/departments", data),
+  update: (id: string, data: { name?: string; description?: string; consultationFee?: number; workingHours?: string }) =>
+    api.put(`/departments/${id}`, data),
+  toggleActive: (id: string) => api.put(`/departments/${id}/toggle-active`),
+};
+
+export const settingsApi = {
+  getAll: (category?: string) => api.get("/settings", { params: category ? { category } : undefined }),
+  getByKey: (key: string) => api.get(`/settings/${key}`),
+  upsert: (key: string, value: string, category?: string) => api.put("/settings", { key, value, category }),
+  bulkUpsert: (settings: { key: string; value: string; category?: string }[]) =>
+    api.put("/settings/bulk", { settings }),
+};
+
+export const permissionApi = {
+  getAll: () => api.get("/permissions"),
+  getRolePermissions: (role: string) => api.get(`/permissions/roles/${role}`),
+  setRolePermissions: (role: string, permissionIds: string[]) =>
+    api.put(`/permissions/roles/${role}`, { permissionIds }),
+  getUserPermissions: (userId: string) => api.get(`/permissions/users/${userId}`),
+  setUserPermissions: (userId: string, permissions: { permissionId: string; granted: boolean }[]) =>
+    api.put(`/permissions/users/${userId}`, { permissions }),
+  seed: () => api.post("/permissions/seed"),
+};
+
+export const schedulingApi = {
+  getDoctorSchedules: () => api.get("/scheduling/doctors"),
+  getSchedule: (userId: string) => api.get(`/scheduling/schedule/${userId}`),
+  upsertSchedule: (userId: string, schedules: { dayOfWeek: number; startTime: string; endTime: string; isAvailable: boolean }[]) =>
+    api.put(`/scheduling/schedule/${userId}`, { schedules }),
+  getLeaveRequests: (status?: string) => api.get("/scheduling/leaves", { params: status ? { status } : undefined }),
+  createLeaveRequest: (data: { userId: string; startDate: string; endDate: string; reason?: string }) =>
+    api.post("/scheduling/leaves", data),
+  updateLeaveStatus: (id: string, status: string) => api.put(`/scheduling/leaves/${id}`, { status }),
+};
+
 export const adminApi = {
   getStats: () => api.get("/admin/stats"),
   getRevenue: () => api.get("/admin/revenue"),
@@ -324,4 +369,8 @@ export const adminApi = {
   getSettings: () => api.get("/admin/settings"),
   setSetting: (key: string, value: string, category?: string) =>
     api.put("/admin/settings", { key, value, category }),
+};
+
+export const publicOrgApi = {
+  getBySlug: (slug: string) => api.get(`/public/org/${slug}`),
 };

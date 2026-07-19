@@ -4,11 +4,10 @@ import { authorize } from "../../middleware/auth";
 
 const router = Router();
 
-router.use(authorize("DOCTOR"));
+router.post("/", authorize("DOCTOR"), consultationController.create);
 
-router.post("/", consultationController.create);
-router.get("/", consultationController.getByDoctor);
-router.get("/completed-today", consultationController.getTodayCompleted);
-router.get("/patient/:patientId", consultationController.getByPatient);
+router.get("/", authorize("DOCTOR"), consultationController.getByDoctor);
+router.get("/completed-today", authorize("DOCTOR"), consultationController.getTodayCompleted);
+router.get("/patient/:patientId", authorize("DOCTOR"), consultationController.getByPatient);
 
 export default router;

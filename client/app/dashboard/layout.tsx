@@ -19,8 +19,11 @@ import {
   History,
   TestTube,
   ChevronDown,
+  Settings,
+  Shield,
+  Building,
+  CalendarClock,
 } from "lucide-react";
-
 interface SidebarLink {
   href: string;
   label: string;
@@ -41,48 +44,20 @@ const roleGroups: Record<string, SidebarGroup[]> = {
     {
       label: "Administration",
       links: [
+        { href: "/dashboard/users", label: "Users", icon: Users },
+        { href: "/dashboard/departments", label: "Departments", icon: Building },
+        { href: "/dashboard/roles", label: "Roles & Permissions", icon: Shield },
+        { href: "/dashboard/schedules", label: "Schedules", icon: CalendarClock },
+        { href: "/dashboard/settings", label: "Settings", icon: Settings },
         { href: "/dashboard/organizations", label: "Organizations", icon: Building2 },
         { href: "/dashboard/billing", label: "Subscription", icon: CreditCard },
         { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History },
-        { href: "/dashboard/users", label: "Users", icon: Users },
-      ],
-    },
-    {
-      label: "Patient Care",
-      links: [
-        { href: "/dashboard/reception", label: "Reception", icon: Calendar },
-        { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
-        { href: "/dashboard/reception/appointments", label: "New Appointment", icon: Calendar },
-        { href: "/dashboard/reception/queue", label: "Queue View", icon: Users },
-        { href: "/dashboard/reception/appointments-list", label: "Appointments List", icon: FileText },
-        { href: "/dashboard/doctor", label: "Doctors", icon: Stethoscope },
-      ],
-    },
-    {
-      label: "Pharmacy",
-      links: [
-        { href: "/dashboard/pharmacy", label: "Overview", icon: Pill },
-        { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill },
-        { href: "/dashboard/pharmacy/sales", label: "Sales", icon: ShoppingCart },
-        { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
-      ],
-    },
-    {
-      label: "Clinical",
-      links: [
-        { href: "/dashboard/lab", label: "Lab", icon: TestTube },
       ],
     },
     {
       label: "Reports",
       links: [
         { href: "/dashboard/reports", label: "Appointments", icon: FileText },
-        { href: "/dashboard/sales", label: "Sales", icon: ShoppingCart },
-      ],
-    },
-    {
-      label: "Finance",
-      links: [
         { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
       ],
     },

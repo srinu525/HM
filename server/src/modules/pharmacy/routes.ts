@@ -21,7 +21,7 @@ const router = Router();
  *       200:
  *         description: List of medicines
  */
-router.get("/medicines", authorize("ADMIN", "PHARMACIST", "DOCTOR"), pharmacyController.getAllMedicines);
+router.get("/medicines", authorize("PHARMACIST", "DOCTOR"), pharmacyController.getAllMedicines);
 
 /**
  * @swagger
@@ -58,7 +58,7 @@ router.get("/medicines", authorize("ADMIN", "PHARMACIST", "DOCTOR"), pharmacyCon
  *       201:
  *         description: Medicine created
  */
-router.post("/medicines", authorize("ADMIN", "PHARMACIST"), pharmacyController.createMedicine);
+router.post("/medicines", authorize("PHARMACIST"), pharmacyController.createMedicine);
 
 /**
  * @swagger
@@ -78,7 +78,7 @@ router.post("/medicines", authorize("ADMIN", "PHARMACIST"), pharmacyController.c
  *       200:
  *         description: Medicine updated
  */
-router.put("/medicines/:id", authorize("ADMIN", "PHARMACIST"), pharmacyController.updateMedicine);
+router.put("/medicines/:id", authorize("PHARMACIST"), pharmacyController.updateMedicine);
 
 /**
  * @swagger
@@ -108,7 +108,7 @@ router.put("/medicines/:id", authorize("ADMIN", "PHARMACIST"), pharmacyControlle
  *       200:
  *         description: Stock updated
  */
-router.put("/medicines/:id/stock", authorize("ADMIN", "PHARMACIST"), pharmacyController.updateStock);
+router.put("/medicines/:id/stock", authorize("PHARMACIST"), pharmacyController.updateStock);
 
 /**
  * @swagger
@@ -122,7 +122,7 @@ router.put("/medicines/:id/stock", authorize("ADMIN", "PHARMACIST"), pharmacyCon
  *       200:
  *         description: Inventory alerts
  */
-router.get("/inventory/alerts", authorize("ADMIN", "PHARMACIST"), pharmacyController.getInventoryAlerts);
+router.get("/inventory/alerts", authorize("PHARMACIST"), pharmacyController.getInventoryAlerts);
 
 /**
  * @swagger
@@ -136,7 +136,7 @@ router.get("/inventory/alerts", authorize("ADMIN", "PHARMACIST"), pharmacyContro
  *       200:
  *         description: List of sales
  */
-router.get("/sales", authorize("ADMIN", "PHARMACIST"), pharmacyController.getSales);
+router.get("/sales", authorize("PHARMACIST"), pharmacyController.getSales);
 
 /**
  * @swagger
@@ -184,7 +184,7 @@ router.post("/sales", authorize("PHARMACIST"), pharmacyController.createSale);
  *       200:
  *         description: List of prescriptions
  */
-router.get("/prescriptions", authorize("ADMIN", "PHARMACIST", "DOCTOR"), pharmacyController.getPrescriptions);
+router.get("/prescriptions", authorize("PHARMACIST", "DOCTOR"), pharmacyController.getPrescriptions);
 
 /**
  * @swagger
@@ -204,7 +204,7 @@ router.get("/prescriptions", authorize("ADMIN", "PHARMACIST", "DOCTOR"), pharmac
  *       200:
  *         description: PDF file
  */
-router.get("/prescriptions/:id/pdf", authorize("ADMIN", "PHARMACIST", "DOCTOR"), pharmacyController.downloadPrescriptionPdf);
+router.get("/prescriptions/:id/pdf", authorize("PHARMACIST", "DOCTOR"), pharmacyController.downloadPrescriptionPdf);
 
 /**
  * @swagger

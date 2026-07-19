@@ -44,6 +44,25 @@ export class OrganizationService {
     if (!org) throw AppError.notFound("Organization not found");
     return org;
   }
+
+  async getBySlug(slug: string) {
+    const org = await prisma.organization.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        email: true,
+        phone: true,
+        address: true,
+        logo: true,
+        isActive: true,
+        _count: { select: { users: true, patients: true } },
+      },
+    });
+    if (!org) throw AppError.notFound("Organization not found");
+    return org;
+  }
 }
 
 export const organizationService = new OrganizationService();

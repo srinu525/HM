@@ -459,7 +459,7 @@ export default function DoctorPage() {
             </Card>
           </div>
 
-          <div className="w-[380px] shrink-0">
+          <div className="w-95 shrink-0">
             <Card className="h-full flex flex-col">
               <CardHeader className="shrink-0">
                 <CardTitle className="flex items-center gap-2 text-base">

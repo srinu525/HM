@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Clock, CheckCircle2, AlertCircle } from "lucide-react";
@@ -18,18 +19,24 @@ interface QueueItem {
 }
 
 export default function QueuePage() {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const isDoctor = user?.role === "DOCTOR";
 
   useEffect(() => {
     fetchAppointments();
     const interval = setInterval(fetchAppointments, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.id]);
 
   const fetchAppointments = async () => {
     try {
-      const res = await api.get("/appointments");
+      const url = isDoctor && user?.id
+        ? `/appointments/queue/${user.id}`
+        : "/appointments";
+      const res = await api.get(url);
       setAppointments(res.data.data);
     } catch (error) {
       console.error(error);
@@ -71,7 +78,7 @@ export default function QueuePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Queue View</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{isDoctor ? "My Queue" : "Queue View"}</h1>
           <p className="text-gray-600 mt-1">Real-time appointment queue</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -90,7 +97,7 @@ export default function QueuePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Queue View</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{isDoctor ? "My Queue" : "Queue View"}</h1>
         <p className="text-gray-600 mt-1">Real-time appointment queue - auto-refreshes every 10 seconds</p>
       </div>
 

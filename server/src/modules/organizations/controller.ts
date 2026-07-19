@@ -48,6 +48,15 @@ export class OrganizationController {
       next(error);
     }
   }
+
+  async getBySlug(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const org = await organizationService.getBySlug(req.params.slug as string);
+      sendSuccess(res, org, "Organization fetched");
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const organizationController = new OrganizationController();

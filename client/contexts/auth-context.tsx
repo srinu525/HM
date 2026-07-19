@@ -57,10 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    const savedSlug = localStorage.getItem("orgSlug") || "default-hospital";
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("orgSlug");
     setUser(null);
-    window.location.href = "/login";
+    window.location.href = `/${savedSlug}/login`;
   }, []);
 
   const value = useMemo(() => ({ user, login, logout, isLoading }), [user, login, logout, isLoading]);

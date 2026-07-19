@@ -29,15 +29,20 @@ enum Gender {
 }
 
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  email     String?
-  phone     String?
-  address   String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String
+  slug            String   @unique
+  email           String?
+  phone           String?
+  address         String?
+  logo            String?
+  timezone        String   @default("UTC")
+  currency        String   @default("USD")
+  gstVat          String?
+  hospitalLicense String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   users         User[]
   patients      Patient[]
@@ -50,6 +55,9 @@ model Organization {
   invoices      Invoice[]
   payments      Payment[]
   featureFlags  FeatureFlag[]
+  departments  Department[]
+  settings     OrgSetting[]
+  leaveRequests LeaveRequest[]
 }
 
 model Plan {
@@ -161,11 +169,14 @@ model User {
 
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
+  departmentId   String?
+  department     Department? @relation(fields: [departmentId], references: [id])
 
   consultations     Consultation[]
   doctorAppointments Appointment[]  @relation("DoctorAppointments")
   notifications     Notification[]
   labResults        LabResult[]
+  schedules         StaffSchedule[]
 
   @@unique([email, organizationId])
 }
@@ -390,4 +401,99 @@ model PlatformSetting {
   value     String
   category  String   @default("general")
   updatedAt DateTime @updatedAt
+}
+
+model Department {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  consultationFee Float    @default(0)
+  workingHours    String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  users User[]
+
+  @@unique([name, organizationId])
+}
+
+model OrgSetting {
+  id        String   @id @default(uuid())
+  key       String
+  value     String
+  category  String   @default("general")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([key, organizationId])
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  module      String
+  action      String
+  createdAt   DateTime @default(now())
+
+  rolePermissions RolePermission[]
+  userPermissions UserPermission[]
+}
+
+model RolePermission {
+  id           String   @id @default(uuid())
+  role         Role
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@unique([role, permissionId])
+}
+
+model UserPermission {
+  id           String   @id @default(uuid())
+  userId       String
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  granted      Boolean   @default(true)
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, permissionId])
+}
+
+model StaffSchedule {
+  id          String   @id @default(uuid())
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, dayOfWeek])
+}
+
+model LeaveRequest {
+  id          String   @id @default(uuid())
+  userId      String
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  status      String   @default("PENDING")
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 }

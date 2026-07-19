@@ -30,16 +30,25 @@ export class AppointmentService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return prisma.appointment.findMany({
-            where: {
-        doctorId, date: { gte: today, lt: new Date(today.getTime() + 86400000) } },
+      where: {
+        doctorId,
+        date: { gte: today, lt: new Date(today.getTime() + 86400000) },
+        doctor: { organizationId },
+      },
       include: { patient: { select: { id: true, patientId: true, name: true, phone: true, gender: true } } },
       orderBy: { token: "asc" },
     });
   }
 
   async updateStatus(id: string, status: string, organizationId: string) {
-    const appointment = await prisma.appointment.findUnique({ where: { id } });
+    const appointment = await prisma.appointment.findUnique({
+      where: { id },
+      include: { doctor: { select: { organizationId: true } } },
+    });
     if (!appointment) { throw AppError.notFound("Appointment not found"); }
+    if (appointment.doctor.organizationId !== organizationId) {
+      throw AppError.forbidden("Not authorized to update this appointment");
+    }
     return prisma.appointment.update({ where: { id }, data: { status: status as any } });
   }
 
@@ -48,10 +57,15 @@ export class AppointmentService {
     today.setHours(0, 0, 0, 0);
     return prisma.appointment.findMany({
       where: {
-        doctorId, date: { gte: today, lt: new Date(today.getTime() + 86400000) },
+        doctorId,
+        date: { gte: today, lt: new Date(today.getTime() + 86400000) },
         status: { in: ["SCHEDULED", "IN_PROGRESS"] },
+        doctor: { organizationId },
       },
-      include: { patient: { select: { id: true, patientId: true, name: true, phone: true, gender: true, dob: true, age: true } } },
+      include: {
+        patient: { select: { id: true, patientId: true, name: true, phone: true, gender: true, dob: true, age: true } },
+        doctor: { select: { id: true, name: true } },
+      },
       orderBy: { token: "asc" },
     });
   }
@@ -60,7 +74,10 @@ export class AppointmentService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return prisma.appointment.findMany({
-      where: { date: { gte: today, lt: new Date(today.getTime() + 86400000) } },
+      where: {
+        date: { gte: today, lt: new Date(today.getTime() + 86400000) },
+        doctor: { organizationId },
+      },
       include: {
         patient: { select: { id: true, patientId: true, name: true, phone: true } },
         doctor: { select: { id: true, name: true } },

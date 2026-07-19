@@ -29,6 +29,10 @@ import auditLogRoutes from "./modules/audit-logs/routes";
 import fileRoutes from "./modules/files/routes";
 import labRoutes from "./modules/lab/routes";
 import invoiceRoutes from "./modules/invoices/routes";
+import schedulingRoutes from "./modules/scheduling/routes";
+import departmentRoutes from "./modules/departments/routes";
+import settingsRoutes from "./modules/settings/routes";
+import permissionRoutes from "./modules/permissions/routes";
 import statsRoutes from "./modules/stats/routes";
 import adminRoutes from "./modules/admin/routes";
 import patientPortalRoutes from "./modules/patient-portal/routes";
@@ -80,8 +84,22 @@ app.use("/api/v1/audit-logs", authenticate, tenantScope, auditLogRoutes);
 app.use("/api/v1/files", authenticate, tenantScope, fileRoutes);
 app.use("/api/v1/lab", authenticate, tenantScope, labRoutes);
 app.use("/api/v1/invoices", authenticate, tenantScope, invoiceRoutes);
+app.use("/api/v1/scheduling", authenticate, tenantScope, schedulingRoutes);
+app.use("/api/v1/departments", authenticate, tenantScope, departmentRoutes);
+app.use("/api/v1/settings", authenticate, tenantScope, settingsRoutes);
+app.use("/api/v1/permissions", authenticate, permissionRoutes);
 app.use("/api/v1/stats", authenticate, tenantScope, statsRoutes);
 app.use("/api/v1/patient", patientPortalRoutes);
+
+app.get("/api/v1/public/org/:slug", async (req, res, next) => {
+  try {
+    const { organizationService } = await import("./modules/organizations/service");
+    const org = await organizationService.getBySlug(req.params.slug);
+    res.json({ success: true, data: org, message: "Organization fetched" });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Backward compatibility - old /api/ routes
 app.use("/api/auth", authRoutes);

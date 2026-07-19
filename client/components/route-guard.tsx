@@ -22,20 +22,24 @@ const routeRoles: Record<string, string[]> = {
   "/dashboard/billing": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/audit-logs": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/users": ["SUPER_ADMIN", "ADMIN"],
-  "/dashboard/reception": ["ADMIN", "RECEPTIONIST"],
-  "/dashboard/reception/patients": ["ADMIN", "RECEPTIONIST"],
-  "/dashboard/reception/appointments": ["ADMIN", "RECEPTIONIST"],
-  "/dashboard/reception/queue": ["ADMIN", "RECEPTIONIST", "DOCTOR"],
-  "/dashboard/reception/appointments-list": ["ADMIN", "RECEPTIONIST"],
-  "/dashboard/doctor": ["ADMIN", "DOCTOR"],
-  "/dashboard/pharmacy": ["ADMIN", "PHARMACIST"],
-  "/dashboard/pharmacy/inventory": ["ADMIN", "PHARMACIST"],
-  "/dashboard/pharmacy/prescriptions": ["ADMIN", "PHARMACIST", "DOCTOR"],
-  "/dashboard/pharmacy/sales": ["ADMIN", "PHARMACIST"],
+  "/dashboard/departments": ["SUPER_ADMIN", "ADMIN"],
+  "/dashboard/roles": ["SUPER_ADMIN", "ADMIN"],
+  "/dashboard/settings": ["SUPER_ADMIN", "ADMIN"],
+  "/dashboard/schedules": ["SUPER_ADMIN", "ADMIN"],
+  "/dashboard/reception": ["RECEPTIONIST"],
+  "/dashboard/reception/patients": ["RECEPTIONIST"],
+  "/dashboard/reception/appointments": ["RECEPTIONIST"],
+  "/dashboard/reception/queue": ["RECEPTIONIST", "DOCTOR"],
+  "/dashboard/reception/appointments-list": ["RECEPTIONIST"],
+  "/dashboard/doctor": ["DOCTOR"],
+  "/dashboard/pharmacy": ["PHARMACIST"],
+  "/dashboard/pharmacy/inventory": ["PHARMACIST"],
+  "/dashboard/pharmacy/prescriptions": ["PHARMACIST", "DOCTOR"],
+  "/dashboard/pharmacy/sales": ["PHARMACIST"],
   "/dashboard/reports": ["ADMIN", "RECEPTIONIST"],
-  "/dashboard/lab": ["ADMIN", "DOCTOR", "PHARMACIST"],
-  "/dashboard/invoices": ["ADMIN", "RECEPTIONIST"],
-  "/dashboard/sales": ["ADMIN", "PHARMACIST"],
+  "/dashboard/lab": ["DOCTOR", "PHARMACIST"],
+  "/dashboard/invoices": ["RECEPTIONIST", "ADMIN"],
+  "/dashboard/sales": ["PHARMACIST"],
   "/dashboard/notifications": HOSPITAL_ROLES,
   "/patient": ["PATIENT"],
   "/patient/appointments": ["PATIENT"],
@@ -66,11 +70,11 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   const isAllowed = allowed !== null && user && allowed.includes(user.role);
 
   useEffect(() => {
-    console.log("RouteGuard", { pathname, user, isLoading, allowed });
     if (!isLoading && !user) {
-      router.push("/login");
+      const savedSlug = localStorage.getItem("orgSlug") || "default-hospital";
+      router.push(`/${savedSlug}/login`);
     }
-  }, [user, isLoading, router, pathname, allowed]);
+  }, [user, isLoading, router]);
 
   if (isLoading) {
     return (
