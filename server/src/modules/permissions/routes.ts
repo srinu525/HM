@@ -4,6 +4,8 @@ import { authorize } from "../../middleware/auth";
 
 const router = Router();
 
+router.get("/me", permissionController.getMyPermissions);
+
 router.use(authorize("ADMIN"));
 
 router.get("/", permissionController.getAll);

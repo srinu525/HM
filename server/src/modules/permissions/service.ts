@@ -143,6 +143,36 @@ export class PermissionService {
     return results;
   }
 
+  async getMyPermissions(userId: string, role: Role, organizationId: string): Promise<string[]> {
+    if (role === "SUPER_ADMIN") {
+      const all = await prisma.permission.findMany();
+      return all.map((p) => p.name);
+    }
+
+    const rolePerms = await prisma.rolePermission.findMany({
+      where: { role },
+      select: { permissionId: true },
+    });
+    const rolePermIds = new Set(rolePerms.map((rp) => rp.permissionId));
+
+    const userPerms = await prisma.userPermission.findMany({
+      where: { userId },
+      select: { permissionId: true, granted: true },
+    });
+
+    const allPermIds = new Set([...rolePermIds, ...userPerms.filter((up) => up.granted).map((up) => up.permissionId)]);
+    const revokedIds = new Set(userPerms.filter((up) => !up.granted).map((up) => up.permissionId));
+
+    const finalIds = [...allPermIds].filter((id) => !revokedIds.has(id));
+    if (finalIds.length === 0) return [];
+
+    const permissions = await prisma.permission.findMany({
+      where: { id: { in: finalIds } },
+      select: { name: true },
+    });
+    return permissions.map((p) => p.name);
+  }
+
   async hasPermission(userId: string, role: Role, permissionName: string): Promise<boolean> {
     if (role === "SUPER_ADMIN") return true;
 

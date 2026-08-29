@@ -6,6 +6,19 @@ import { sendSuccess } from "../../common/response";
 import { AppError } from "../../common/errors/AppError";
 
 export class PermissionController {
+  async getMyPermissions(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const permissions = await permissionService.getMyPermissions(
+        req.user!.id,
+        req.user!.role,
+        req.user!.organizationId
+      );
+      sendSuccess(res, permissions, "Your permissions fetched");
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const permissions = await permissionService.getAll();

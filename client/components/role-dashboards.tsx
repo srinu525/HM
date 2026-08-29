@@ -149,7 +149,7 @@ export function DoctorDashboard() {
             </div>
           )}
           <div className="mt-4">
-            <Link href="/dashboard/doctor">
+            <Link href="/dashboard/consultations">
               <Button variant="outline" className="w-full">Open Consultation View</Button>
             </Link>
           </div>
@@ -329,7 +329,7 @@ export function ReceptionistDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/dashboard/reception/patients">
+        <Link href="/dashboard/patients">
           <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
             <CardContent className="p-4 flex items-center gap-3">
               <Users className="h-5 w-5 text-blue-600" />
@@ -337,7 +337,7 @@ export function ReceptionistDashboard() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/dashboard/reception/appointments">
+        <Link href="/dashboard/appointments">
           <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
             <CardContent className="p-4 flex items-center gap-3">
               <Calendar className="h-5 w-5 text-cyan-600" />
@@ -345,7 +345,7 @@ export function ReceptionistDashboard() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/dashboard/reception/queue">
+        <Link href="/dashboard/queue">
           <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
             <CardContent className="p-4 flex items-center gap-3">
               <Clock className="h-5 w-5 text-yellow-600" />
@@ -498,7 +498,7 @@ export function SuperAdminDashboard() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/dashboard/billing">
+        <Link href="/dashboard/billing/subscriptions">
           <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
             <CardContent className="p-4 flex items-center gap-3">
               <Pill className="h-5 w-5 text-purple-600" />
@@ -506,7 +506,7 @@ export function SuperAdminDashboard() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/dashboard/users">
+        <Link href="/dashboard/admin/users">
           <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
             <CardContent className="p-4 flex items-center gap-3">
               <Users className="h-5 w-5 text-green-600" />

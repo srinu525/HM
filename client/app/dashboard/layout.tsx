@@ -1,180 +1,149 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { RouteGuard } from "@/components/route-guard";
 import {
-  Users,
-  Calendar,
-  Stethoscope,
-  Pill,
-  Bell,
-  LayoutDashboard,
-  FileText,
-  ShoppingCart,
-  Building2,
-  CreditCard,
-  History,
-  TestTube,
-  ChevronDown,
-  Settings,
-  Shield,
-  Building,
-  CalendarClock,
+  Users, Calendar, Stethoscope, Pill, Bell, LayoutDashboard,
+  FileText, ShoppingCart, Building2, CreditCard, History, TestTube,
+  ChevronDown, Settings, Shield, Building, CalendarClock,
 } from "lucide-react";
-interface SidebarLink {
+
+interface SidebarItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  permission?: string;
+  module?: string;
 }
 
 interface SidebarGroup {
   label: string;
-  links: SidebarLink[];
+  items: SidebarItem[];
+  module?: string;
 }
 
-const roleGroups: Record<string, SidebarGroup[]> = {
-  ADMIN: [
-    {
-      label: "Main",
-      links: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
-    },
-    {
-      label: "Administration",
-      links: [
-        { href: "/dashboard/users", label: "Users", icon: Users },
-        { href: "/dashboard/departments", label: "Departments", icon: Building },
-        { href: "/dashboard/roles", label: "Roles & Permissions", icon: Shield },
-        { href: "/dashboard/schedules", label: "Schedules", icon: CalendarClock },
-        { href: "/dashboard/settings", label: "Settings", icon: Settings },
-        { href: "/dashboard/organizations", label: "Organizations", icon: Building2 },
-        { href: "/dashboard/billing", label: "Subscription", icon: CreditCard },
-        { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History },
-      ],
-    },
-    {
-      label: "Reports",
-      links: [
-        { href: "/dashboard/reports", label: "Appointments", icon: FileText },
-        { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
-      ],
-    },
-    {
-      label: "System",
-      links: [
-        { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-      ],
-    },
-  ],
-  RECEPTIONIST: [
-    {
-      label: "Main",
-      links: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
-    },
-    {
-      label: "Patient Care",
-      links: [
-        { href: "/dashboard/reception", label: "Reception", icon: Calendar },
-        { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
-        { href: "/dashboard/reception/appointments", label: "New Appointment", icon: Calendar },
-        { href: "/dashboard/reception/queue", label: "Queue View", icon: Users },
-        { href: "/dashboard/reception/appointments-list", label: "Appointments List", icon: FileText },
-      ],
-    },
-    {
-      label: "Finance",
-      links: [
-        { href: "/dashboard/invoices", label: "Invoices", icon: CreditCard },
-      ],
-    },
-    {
-      label: "System",
-      links: [
-        { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-      ],
-    },
-  ],
-  DOCTOR: [
-    {
-      label: "Main",
-      links: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
-    },
-    {
-      label: "Patient Care",
-      links: [
-        { href: "/dashboard/reception/patients", label: "Patients", icon: Users },
-        { href: "/dashboard/doctor", label: "Consultations", icon: Stethoscope },
-        { href: "/dashboard/reception/queue", label: "Queue", icon: Users },
-      ],
-    },
-    {
-      label: "Pharmacy",
-      links: [
-        { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
-      ],
-    },
-    {
-      label: "Clinical",
-      links: [
-        { href: "/dashboard/lab", label: "Lab", icon: TestTube },
-      ],
-    },
-    {
-      label: "System",
-      links: [
-        { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-      ],
-    },
-  ],
-  PHARMACIST: [
-    {
-      label: "Main",
-      links: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
-    },
-    {
-      label: "Pharmacy",
-      links: [
-        { href: "/dashboard/pharmacy", label: "Overview", icon: Pill },
-        { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill },
-        { href: "/dashboard/pharmacy/sales", label: "Sales", icon: ShoppingCart },
-        { href: "/dashboard/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
-      ],
-    },
-    {
-      label: "Clinical",
-      links: [
-        { href: "/dashboard/lab", label: "Lab", icon: TestTube },
-      ],
-    },
-    {
-      label: "System",
-      links: [
-        { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-      ],
-    },
-  ],
-};
+const sidebarConfig: SidebarGroup[] = [
+  {
+    label: "Main",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: "Clinical",
+    module: "patients",
+    items: [
+      { href: "/dashboard/patients", label: "Patients", icon: Users, module: "patients" },
+      { href: "/dashboard/appointments", label: "Appointments", icon: Calendar, module: "appointments" },
+      { href: "/dashboard/queue", label: "Queue", icon: Users, module: "appointments" },
+      { href: "/dashboard/consultations", label: "Consultations", icon: Stethoscope, module: "consultations" },
+      { href: "/dashboard/prescriptions", label: "Prescriptions", icon: FileText, module: "prescriptions" },
+      { href: "/dashboard/lab", label: "Lab", icon: TestTube, module: "lab" },
+    ],
+  },
+  {
+    label: "Pharmacy",
+    module: "pharmacy",
+    items: [
+      { href: "/dashboard/pharmacy", label: "Overview", icon: Pill, module: "pharmacy" },
+      { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill, module: "pharmacy" },
+      { href: "/dashboard/pharmacy/sales", label: "Sales", icon: ShoppingCart, module: "pharmacy" },
+      { href: "/dashboard/prescriptions", label: "Prescriptions", icon: FileText, module: "prescriptions" },
+    ],
+  },
+  {
+    label: "Finance",
+    items: [
+      { href: "/dashboard/billing/invoices", label: "Invoices", icon: CreditCard, module: "invoices" },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { href: "/dashboard/admin/users", label: "Users", icon: Users, module: "users" },
+      { href: "/dashboard/admin/departments", label: "Departments", icon: Building, module: "departments" },
+      { href: "/dashboard/admin/roles", label: "Roles & Permissions", icon: Shield, module: "departments" },
+      { href: "/dashboard/admin/schedules", label: "Schedules", icon: CalendarClock, module: "departments" },
+      { href: "/dashboard/admin/settings", label: "Settings", icon: Settings, module: "settings" },
+      { href: "/dashboard/organizations", label: "Organizations", icon: Building2, permission: "departments.read" },
+      { href: "/dashboard/billing/subscriptions", label: "Subscription", icon: CreditCard, permission: "departments.read" },
+      { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History, module: "audit-logs" },
+    ],
+  },
+  {
+    label: "Reports",
+    items: [
+      { href: "/dashboard/reports", label: "Reports", icon: FileText, module: "reports" },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { href: "/dashboard/notifications", label: "Notifications", icon: Bell, module: "notifications" },
+    ],
+  },
+];
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, hasPermission, hasModule } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  const [expanded, setExpanded] = useState<string | null>("Main");
+  const [mounted, setMounted] = useState(false);
 
-  const groups = user ? (roleGroups[user.role] || []) : [];
-  const [expanded, setExpanded] = useState<string | null>(null);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    for (const group of sidebarConfig) {
+      for (const item of group.items) {
+        if (pathname === item.href || pathname.startsWith(item.href + "/")) {
+          setExpanded(group.label);
+          return;
+        }
+      }
+    }
+  }, [pathname]);
 
   const toggleGroup = (label: string) => {
     setExpanded((prev) => (prev === label ? null : label));
   };
 
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+
+  const isItemVisible = (item: SidebarItem) => {
+    if (!mounted || isLoading) return true;
+    if (isSuperAdmin) return true;
+    if (item.permission) return hasPermission(item.permission);
+    if (item.module) return hasModule(item.module);
+    return true;
+  };
+
+  const visibleGroups = sidebarConfig
+    .filter((group) => {
+      if (!mounted || isLoading) return true;
+      if (isSuperAdmin) return true;
+      if (group.module && !hasModule(group.module) && group.items.every((item) => !isItemVisible(item))) {
+        return false;
+      }
+      return group.items.some((item) => isItemVisible(item));
+    })
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => isItemVisible(item)),
+    }));
+
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -182,7 +151,6 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
         w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm
@@ -204,7 +172,7 @@ export default function DashboardLayout({
           </div>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {groups.map((group) => {
+          {visibleGroups.map((group) => {
             const isOpen = expanded === group.label;
             return (
               <div key={group.label}>
@@ -220,15 +188,19 @@ export default function DashboardLayout({
                 </button>
                 {isOpen && (
                   <div className="mt-0.5 space-y-0.5">
-                    {group.links.map((link) => (
+                    {group.items.map((item) => (
                       <Link
-                        key={link.href}
-                        href={link.href}
+                        key={item.href}
+                        href={item.href}
                         onClick={() => setSidebarOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition-colors duration-200"
+                        className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                          pathname === item.href
+                            ? "bg-blue-50 text-blue-600"
+                            : "hover:bg-blue-50 text-gray-700 hover:text-blue-600"
+                        }`}
                       >
-                        <link.icon className="h-5 w-5" />
-                        {link.label}
+                        <item.icon className="h-5 w-5" />
+                        {item.label}
                       </Link>
                     ))}
                   </div>
@@ -239,7 +211,6 @@ export default function DashboardLayout({
         </nav>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
         <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-auto">

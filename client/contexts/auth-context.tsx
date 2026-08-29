@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useMemo, useCallback, useSyncExternalStore, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useMemo, useCallback, useEffect, ReactNode } from "react";
 import { api, User } from "@/lib/api";
 
 interface AuthContextType {
@@ -8,6 +8,9 @@ interface AuthContextType {
   login: (email: string, password: string, organizationSlug: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  hasPermission: (permission: string) => boolean;
+  hasAnyPermission: (...permissions: string[]) => boolean;
+  hasModule: (module: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,27 +28,17 @@ function getInitialUser(): User | null {
   }
 }
 
-function useHydrated() {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const hydrated = useHydrated();
   const [user, setUser] = useState<User | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const isLoading = !hydrated || !loaded;
 
   useEffect(() => {
-    if (hydrated) {
-      const saved = getInitialUser();
-      if (saved) setUser(saved);
-      setLoaded(true);
-    }
-  }, [hydrated]);
+    const saved = getInitialUser();
+    if (saved) setUser(saved);
+    setLoaded(true);
+  }, []);
+
+  const isLoading = !loaded;
 
   const login = useCallback(async (email: string, password: string, organizationSlug: string) => {
     const response = await api.post("/auth/login", { email, password, organizationSlug });
@@ -54,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
+    setLoaded(true);
   }, []);
 
   const logout = useCallback(() => {
@@ -65,7 +59,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = `/${savedSlug}/login`;
   }, []);
 
-  const value = useMemo(() => ({ user, login, logout, isLoading }), [user, login, logout, isLoading]);
+  const permissions = user?.permissions ?? [];
+
+  const hasPermission = useCallback((permission: string) => {
+    return permissions.includes(permission);
+  }, [permissions]);
+
+  const hasAnyPermission = useCallback((...perms: string[]) => {
+    return perms.some((p) => permissions.includes(p));
+  }, [permissions]);
+
+  const hasModule = useCallback((module: string) => {
+    return permissions.some((p) => p.startsWith(module + "."));
+  }, [permissions]);
+
+  const value = useMemo(() => ({
+    user, login, logout, isLoading, hasPermission, hasAnyPermission, hasModule,
+  }), [user, login, logout, isLoading, hasPermission, hasAnyPermission, hasModule]);
 
   return (
     <AuthContext.Provider value={value}>

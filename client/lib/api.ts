@@ -61,6 +61,7 @@ export interface User {
   phone?: string;
   organizationId: string;
   organization?: Organization;
+  permissions?: string[];
 }
 
 export interface AuthResponse {
@@ -330,6 +331,7 @@ export const settingsApi = {
 };
 
 export const permissionApi = {
+  getMyPermissions: () => api.get<{ success: boolean; data: string[] }>("/permissions/me"),
   getAll: () => api.get("/permissions"),
   getRolePermissions: (role: string) => api.get(`/permissions/roles/${role}`),
   setRolePermissions: (role: string, permissionIds: string[]) =>

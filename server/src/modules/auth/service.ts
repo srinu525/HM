@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env";
 import { AppError } from "../../common/errors/AppError";
+import { permissionService } from "../permissions/service";
 
 export class AuthService {
   async register(name: string, email: string, password: string, role: string, organizationId: string, phone?: string) {
@@ -33,6 +34,7 @@ export class AuthService {
     });
 
     const token = this.generateToken(user);
+    const permissions = await permissionService.getMyPermissions(user.id, user.role as any, user.organizationId);
 
     return {
       user: {
@@ -42,6 +44,7 @@ export class AuthService {
         role: user.role,
         organizationId: user.organizationId,
         organization: user.organization,
+        permissions,
       },
       token,
     };
@@ -72,6 +75,7 @@ export class AuthService {
     }
 
     const token = this.generateToken(user);
+    const permissions = await permissionService.getMyPermissions(user.id, user.role as any, user.organizationId);
 
     return {
       user: {
@@ -81,6 +85,7 @@ export class AuthService {
         role: user.role,
         organizationId: user.organizationId,
         organization: user.organization,
+        permissions,
       },
       token,
     };
@@ -105,6 +110,7 @@ export class AuthService {
     }
 
     const token = this.generateToken(user);
+    const permissions = await permissionService.getMyPermissions(user.id, user.role as any, null);
 
     return {
       user: {
@@ -114,6 +120,7 @@ export class AuthService {
         role: user.role,
         organizationId: null,
         organization: null,
+        permissions,
       },
       token,
     };
@@ -139,7 +146,8 @@ export class AuthService {
       throw AppError.notFound("User not found");
     }
 
-    return user;
+    const permissions = await permissionService.getMyPermissions(user.id, user.role as any, user.organizationId);
+    return { ...user, permissions };
   }
 
   private generateToken(user: { id: string; email: string; role: string; organizationId?: string | null }) {
