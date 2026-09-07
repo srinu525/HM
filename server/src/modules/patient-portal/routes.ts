@@ -100,6 +100,26 @@ router.post("/appointments", patientAuthenticate, patientPortalController.bookAp
 
 /**
  * @swagger
+ * /patient/appointments/{id}/cancel:
+ *   put:
+ *     summary: Cancel an appointment
+ *     tags: [Patient Portal]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Appointment cancelled
+ */
+router.put("/appointments/:id/cancel", patientAuthenticate, patientPortalController.cancelAppointment);
+
+/**
+ * @swagger
  * /patient/doctors:
  *   get:
  *     summary: Get available doctors

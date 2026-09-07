@@ -3,27 +3,19 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FileText, Printer, Filter, User, Stethoscope, Download } from "lucide-react";
+import { FileText, Printer, Download, Stethoscope } from "lucide-react";
 
 interface Prescription {
   id: string;
+  status: string;
   notes: string | null;
   createdAt: string;
   patient: { id: string; patientId: string; name: string; phone: string | null };
@@ -43,39 +35,15 @@ interface Prescription {
   }[];
 }
 
-interface Doctor {
-  id: string;
-  name: string;
-}
-
 export default function PrescriptionsPage() {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
-  const [filters, setFilters] = useState({
-    doctorId: "",
-    startDate: "",
-    endDate: "",
-  });
-
-  useEffect(() => {
-    async function load() {
-      const dRes = await api.get("/users/doctors");
-      setDoctors(dRes.data.data);
-      await fetchPrescriptions();
-    }
-    load();
-  }, []);
 
   const fetchPrescriptions = async () => {
     setLoading(true);
     try {
-      const params: Record<string, string> = {};
-      if (filters.doctorId) params.doctorId = filters.doctorId;
-      if (filters.startDate) params.startDate = filters.startDate;
-      if (filters.endDate) params.endDate = filters.endDate;
-      const res = await api.get("/pharmacy/prescriptions", { params });
+      const res = await api.get("/pharmacy/prescriptions");
       setPrescriptions(res.data.data);
     } catch (error) {
       console.error(error);
@@ -86,7 +54,7 @@ export default function PrescriptionsPage() {
 
   useEffect(() => {
     fetchPrescriptions();
-  }, [filters]);
+  }, []);
 
   const handlePrintPrescription = (prescription: Prescription) => {
     const printContent = `
@@ -162,60 +130,9 @@ export default function PrescriptionsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Prescriptions</h1>
-        <p className="text-gray-600 mt-1">View and manage all prescriptions</p>
+        <p className="text-gray-600 mt-1">View your prescriptions</p>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Filter className="h-4 w-4" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Doctor</Label>
-              <Select
-                value={filters.doctorId}
-                onValueChange={(v) => setFilters({ ...filters, doctorId: v === "all" ? "" : (v ?? "") })}
-                items={{ all: "All doctors", ...Object.fromEntries(doctors.map(d => [d.id, d.name])) }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All doctors" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All doctors</SelectItem>
-                  {doctors.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>End Date</Label>
-              <Input
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Prescriptions List */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -240,7 +157,7 @@ export default function PrescriptionsPage() {
               <p className="text-sm text-gray-400 mt-1">Prescriptions will appear here</p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-3">
               {prescriptions.map((rx) => (
                 <div
                   key={rx.id}
@@ -255,6 +172,15 @@ export default function PrescriptionsPage() {
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-gray-900">{rx.patient.name}</p>
                           <span className="text-xs text-gray-400">{rx.patient.patientId}</span>
+                          <Badge
+                            className={
+                              rx.status === "DISPENSED"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-amber-100 text-amber-700"
+                            }
+                          >
+                            {rx.status === "DISPENSED" ? "Dispensed" : "Pending"}
+                          </Badge>
                         </div>
                         <div className="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
                           <Stethoscope className="h-3.5 w-3.5" />
@@ -313,7 +239,6 @@ export default function PrescriptionsPage() {
         </CardContent>
       </Card>
 
-      {/* View Prescription Dialog */}
       {selectedPrescription && (
         <Dialog open={!!selectedPrescription} onOpenChange={() => setSelectedPrescription(null)}>
           <DialogContent className="max-w-lg">

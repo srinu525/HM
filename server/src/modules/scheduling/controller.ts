@@ -50,8 +50,9 @@ export class SchedulingController {
 
   async createLeaveRequest(req: AuthRequest, res: Response, next: NextFunction) {
     try {
+      const targetUserId = (req.body.userId as string) || req.user!.id;
       const leave = await schedulingService.createLeaveRequest(
-        req.user!.id,
+        targetUserId,
         req.body,
         req.user!.organizationId as string
       );

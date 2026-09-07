@@ -1,8 +1,9 @@
 import { prisma } from "../../utils/prisma";
+import { Prisma } from "@prisma/client";
 import { AppError } from "../../common/errors/AppError";
 
 export class ConsultationService {
-  async create(data: { appointmentId: string; doctorId: string; diagnosis?: string; notes?: string }) {
+  async create(data: { appointmentId: string; doctorId: string; diagnosis?: string; notes?: string; vitalSigns?: Prisma.InputJsonValue; followUpDate?: string }) {
     const appointment = await prisma.appointment.findUnique({
       where: { id: data.appointmentId },
     });
@@ -22,6 +23,8 @@ export class ConsultationService {
         doctorId: data.doctorId,
         diagnosis: data.diagnosis,
         notes: data.notes,
+        vitalSigns: data.vitalSigns ?? undefined,
+        followUpDate: data.followUpDate ? new Date(data.followUpDate) : undefined,
       },
       include: {
         appointment: {

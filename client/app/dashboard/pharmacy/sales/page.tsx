@@ -21,13 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ShoppingCart, Plus, Receipt, TrendingUp } from "lucide-react";
+import { ShoppingCart, Plus, Receipt, TrendingUp, AlertTriangle } from "lucide-react";
 
 interface Medicine {
   id: string;
   name: string;
   price: number;
   stock: number;
+  expiryDate: string | null;
 }
 
 interface Patient {
@@ -47,6 +48,7 @@ interface Sale {
   total: number;
   createdAt: string;
   patient: { id: string; patientId: string; name: string };
+  prescription: { id: string; status: string } | null;
   items: { medicine: { name: string }; quantity: number; unitPrice: number; total: number }[];
 }
 
@@ -60,6 +62,23 @@ export default function SalesPage() {
 
   const [billingForm, setBillingForm] = useState({ patientId: "" });
   const [saleItems, setSaleItems] = useState<SaleItem[]>([{ medicineId: "", quantity: 1 }]);
+  const [medicineSearch, setMedicineSearch] = useState("");
+
+  const expiringSoon = (med: Medicine | undefined) => {
+    if (!med?.expiryDate) return false;
+    const days = Math.ceil((new Date(med.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return days <= 30;
+  };
+
+  const filteredMedicines = medicines.filter((m) =>
+    m.name.toLowerCase().includes(medicineSearch.toLowerCase())
+  );
+
+  function resetSaleForm() {
+    setSaleItems([{ medicineId: "", quantity: 1 }]);
+    setBillingForm({ patientId: "" });
+    setMedicineSearch("");
+  }
 
   useEffect(() => {
     async function load() {
@@ -89,10 +108,14 @@ export default function SalesPage() {
         patientId: billingForm.patientId,
         items: validItems,
       });
-      setMessage(`Sale completed! Total: ₹${res.data.data.total}`);
+      const warnings = res.data.data?.expiryWarnings || [];
+      setMessage(
+        `Sale completed! Total: ₹${res.data.data.total}${
+          warnings.length > 0 ? ` (Warning: ${warnings.length} medicine(s) expire within 30 days)` : ""
+        }`
+      );
       setBillingDialogOpen(false);
-      setSaleItems([{ medicineId: "", quantity: 1 }]);
-      setBillingForm({ patientId: "" });
+      resetSaleForm();
       // Refresh data
       const [mRes, sRes] = await Promise.all([
         api.get("/pharmacy/medicines"),
@@ -225,47 +248,71 @@ export default function SalesPage() {
                   </Button>
                 </div>
                 <div className="space-y-2">
-                  {saleItems.map((item, index) => (
-                    <div key={index} className="flex gap-2 items-end">
-                      <div className="flex-1 space-y-1">
-                        <Label className="text-xs">Medicine</Label>
-                        <select
-                          className="w-full border rounded px-2 py-1.5 text-sm"
-                          value={item.medicineId}
-                          onChange={(e) => updateSaleItem(index, "medicineId", e.target.value)}
-                        >
-                          <option value="">Select...</option>
-                          {medicines.map((m) => (
-                            <option key={m.id} value={m.id} disabled={m.stock === 0}>
-                              {m.name} - ₹{m.price} (Stock: {m.stock})
-                            </option>
-                          ))}
-                        </select>
+                  <Input
+                    placeholder="Search medicines..."
+                    value={medicineSearch}
+                    onChange={(e) => setMedicineSearch(e.target.value)}
+                    className="mb-1"
+                  />
+                  {saleItems.map((item, index) => {
+                    const med = medicines.find((m) => m.id === item.medicineId);
+                    const insufficient = med ? item.quantity > med.stock : false;
+                    const expSoon = expiringSoon(med);
+                    return (
+                      <div key={index} className="flex gap-2 items-end">
+                        <div className="flex-1 space-y-1">
+                          <Label className="text-xs">Medicine</Label>
+                          <select
+                            className="w-full border rounded px-2 py-1.5 text-sm"
+                            value={item.medicineId}
+                            onChange={(e) => updateSaleItem(index, "medicineId", e.target.value)}
+                          >
+                            <option value="">Select...</option>
+                            {filteredMedicines.map((m) => (
+                              <option key={m.id} value={m.id} disabled={m.stock === 0}>
+                                {m.name} - ₹{m.price} (Stock: {m.stock})
+                                {m.expiryDate ? ` - Exp ${new Date(m.expiryDate).toLocaleDateString()}` : ""}
+                              </option>
+                            ))}
+                          </select>
+                          {insufficient && (
+                            <p className="text-xs text-red-600 flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" /> Insufficient stock (only {med?.stock} available)
+                            </p>
+                          )}
+                          {expSoon && (
+                            <p className="text-xs text-amber-600 flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" /> Expires{" "}
+                              {med?.expiryDate ? new Date(med.expiryDate).toLocaleDateString() : ""}{" "}
+                              — within 30 days
+                            </p>
+                          )}
+                        </div>
+                        <div className="w-20 space-y-1">
+                          <Label className="text-xs">Qty</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateSaleItem(index, "quantity", parseInt(e.target.value) || 1)
+                            }
+                          />
+                        </div>
+                        {saleItems.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500"
+                            onClick={() => removeSaleItem(index)}
+                          >
+                            x
+                          </Button>
+                        )}
                       </div>
-                      <div className="w-20 space-y-1">
-                        <Label className="text-xs">Qty</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateSaleItem(index, "quantity", parseInt(e.target.value) || 1)
-                          }
-                        />
-                      </div>
-                      {saleItems.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500"
-                          onClick={() => removeSaleItem(index)}
-                        >
-                          x
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -362,6 +409,9 @@ export default function SalesPage() {
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900">{sale.patient.name}</p>
                       <span className="text-xs text-gray-400">{sale.patient.patientId}</span>
+                      {sale.prescription && (
+                        <Badge className="bg-blue-100 text-blue-700">From Prescription</Badge>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500 mt-0.5">
                       {sale.items.map((item) => item.medicine.name).join(", ")}

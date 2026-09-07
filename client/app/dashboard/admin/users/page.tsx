@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +35,7 @@ interface User {
 }
 
 export default function UsersPage() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -73,6 +75,7 @@ export default function UsersPage() {
         password: form.password,
         role: form.role,
         phone: form.phone || undefined,
+        organizationId: currentUser?.organizationId,
       });
       setMessage("User created successfully!");
       setForm({ name: "", email: "", password: "", role: "RECEPTIONIST", phone: "" });

@@ -83,6 +83,7 @@ const CATEGORY_MAP: Record<TabId, string> = {
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("general");
   const [values, setValues] = useState<Record<string, string>>({});
+  const [initialValues, setInitialValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [message, setMessage] = useState("");
@@ -96,6 +97,7 @@ export default function SettingsPage() {
         map[s.key] = s.value;
       }
       setValues(map);
+      setInitialValues(map);
     } catch (err) {
       console.error("Failed to load settings", err);
     } finally {
@@ -113,12 +115,19 @@ export default function SettingsPage() {
     try {
       const fields = TAB_FIELDS[activeTab];
       const category = CATEGORY_MAP[activeTab];
-      const settings = fields.map((f) => ({
+      const dirtyFields = fields.filter((f) => values[f.key] !== initialValues[f.key]);
+      if (dirtyFields.length === 0) {
+        setMessage("No changes to save.");
+        setLoading(false);
+        return;
+      }
+      const settings = dirtyFields.map((f) => ({
         key: f.key,
         value: values[f.key] ?? "",
         category,
       }));
       await api.put("/settings/bulk", { settings });
+      setInitialValues({ ...initialValues, ...Object.fromEntries(dirtyFields.map(f => [f.key, values[f.key] ?? ""])) });
       setMessage("Settings saved successfully!");
       setTimeout(() => setMessage(""), 3000);
     } catch (err: unknown) {

@@ -39,6 +39,13 @@ export class AdminController {
     } catch (error) { next(error); }
   }
 
+  async deleteOrganization(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const org = await adminService.deleteOrganization(req.params.id as string);
+      sendSuccess(res, org, "Organization deactivated");
+    } catch (error) { next(error); }
+  }
+
   async getAllUsers(_req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const users = await adminService.getAllUsers();
@@ -60,6 +67,20 @@ export class AdminController {
     } catch (error) { next(error); }
   }
 
+  async getSystemAuditLogs(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { organizationId, entity, action, page, limit } = req.query;
+      const result = await adminService.getSystemAuditLogs({
+        organizationId: organizationId as string,
+        entity: entity as string,
+        action: action as string,
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+      });
+      sendSuccess(res, result, "System audit logs fetched");
+    } catch (error) { next(error); }
+  }
+
   async getFeatureFlags(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const flags = await adminService.getFeatureFlags(req.params.orgId as string);
@@ -70,9 +91,18 @@ export class AdminController {
   async setFeatureFlag(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { orgId } = req.params;
-      const { key, isEnabled } = req.body;
-      const flag = await adminService.setFeatureFlag(orgId as string, key, isEnabled);
+      const { key, isEnabled, name, description } = req.body;
+      const flag = await adminService.setFeatureFlag(orgId as string, key, isEnabled, name, description);
       sendSuccess(res, flag, "Feature flag updated");
+    } catch (error) { next(error); }
+  }
+
+  async bulkSetFeatureFlags(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { orgId } = req.params;
+      const { flags } = req.body;
+      const result = await adminService.bulkSetFeatureFlags(orgId as string, flags);
+      sendSuccess(res, result, "Feature flags updated");
     } catch (error) { next(error); }
   }
 

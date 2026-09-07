@@ -48,6 +48,16 @@ export class AppointmentController {
       next(error);
     }
   }
+
+  async getByDate(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const date = req.query.date as string | undefined;
+      const appointments = await appointmentService.getByDate(date, req.user!.organizationId as string);
+      sendSuccess(res, appointments, "Appointments fetched");
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const appointmentController = new AppointmentController();

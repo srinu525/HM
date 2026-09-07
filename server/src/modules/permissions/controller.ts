@@ -10,8 +10,8 @@ export class PermissionController {
     try {
       const permissions = await permissionService.getMyPermissions(
         req.user!.id,
-        req.user!.role,
-        req.user!.organizationId
+        req.user!.role as Role,
+        req.user!.organizationId ?? null
       );
       sendSuccess(res, permissions, "Your permissions fetched");
     } catch (error) {

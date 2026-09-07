@@ -36,6 +36,7 @@ import permissionRoutes from "./modules/permissions/routes";
 import statsRoutes from "./modules/stats/routes";
 import adminRoutes from "./modules/admin/routes";
 import patientPortalRoutes from "./modules/patient-portal/routes";
+import { requireFeature } from "./middleware/featureFlag";
 import "./modules/notifications/events";
 
 const app = express();
@@ -74,16 +75,16 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin", authenticate, adminRoutes);
 app.use("/api/v1/users", authenticate, tenantScope, userRoutes);
 app.use("/api/v1/patients", authenticate, tenantScope, patientRoutes);
-app.use("/api/v1/appointments", authenticate, tenantScope, appointmentRoutes);
+app.use("/api/v1/appointments", authenticate, tenantScope, requireFeature("appointments"), appointmentRoutes);
 app.use("/api/v1/consultations", authenticate, tenantScope, consultationRoutes);
-app.use("/api/v1/pharmacy", authenticate, tenantScope, pharmacyRoutes);
-app.use("/api/v1/notifications", authenticate, tenantScope, notificationRoutes);
+app.use("/api/v1/pharmacy", authenticate, tenantScope, requireFeature("pharmacy"), pharmacyRoutes);
+app.use("/api/v1/notifications", authenticate, tenantScope, requireFeature("notifications"), notificationRoutes);
 app.use("/api/v1/organizations", authenticate, tenantScope, organizationRoutes);
-app.use("/api/v1/billing", authenticate, tenantScope, planRoutes);
-app.use("/api/v1/audit-logs", authenticate, tenantScope, auditLogRoutes);
-app.use("/api/v1/files", authenticate, tenantScope, fileRoutes);
-app.use("/api/v1/lab", authenticate, tenantScope, labRoutes);
-app.use("/api/v1/invoices", authenticate, tenantScope, invoiceRoutes);
+app.use("/api/v1/billing", authenticate, tenantScope, requireFeature("billing"), planRoutes);
+app.use("/api/v1/audit-logs", authenticate, tenantScope, requireFeature("audit-logs"), auditLogRoutes);
+app.use("/api/v1/files", authenticate, tenantScope, requireFeature("files"), fileRoutes);
+app.use("/api/v1/lab", authenticate, tenantScope, requireFeature("lab"), labRoutes);
+app.use("/api/v1/invoices", authenticate, tenantScope, requireFeature("billing"), invoiceRoutes);
 app.use("/api/v1/scheduling", authenticate, tenantScope, schedulingRoutes);
 app.use("/api/v1/departments", authenticate, tenantScope, departmentRoutes);
 app.use("/api/v1/settings", authenticate, tenantScope, settingsRoutes);
@@ -130,9 +131,23 @@ const gracefulShutdown = () => {
 process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);
 
-httpServer.listen(env.PORT, () => {
+httpServer.listen(env.PORT, async () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV, cron: env.CRON_ENABLED }, "Server running");
   logger.info({ url: `http://localhost:${env.PORT}/api/docs` }, "API docs available");
+
+  // Auto-seed permissions if the table is empty (prevents blank-access on fresh deployments)
+  try {
+    const { prisma } = await import("./utils/prisma");
+    const count = await prisma.permission.count();
+    if (count === 0) {
+      logger.info("No permissions found — running auto-seed...");
+      const { permissionService } = await import("./modules/permissions/service");
+      await permissionService.seedPermissions();
+      logger.info("Auto-seed complete");
+    }
+  } catch (err) {
+    logger.warn({ err }, "Auto-seed check failed (non-fatal)");
+  }
 });
 
 export default app;

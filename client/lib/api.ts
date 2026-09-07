@@ -25,18 +25,32 @@ function redirectToLogin() {
   if (isRedirecting) return;
   isRedirecting = true;
   if (typeof window !== "undefined") {
+    const role = localStorage.getItem("userRole");
     const savedSlug = localStorage.getItem("orgSlug") || "default-hospital";
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    window.location.href = `/${savedSlug}/login`;
+    localStorage.removeItem("userRole");
+
+    if (role === "SUPER_ADMIN") {
+      window.location.href = "/super-admin";
+    } else if (role === "PATIENT") {
+      window.location.href = "/patient/login";
+    } else {
+      window.location.href = `/${savedSlug}/login`;
+    }
+
+    setTimeout(() => { isRedirecting = false; }, 3000);
   }
 }
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const isAuthRequest = (error.config?.url || "").includes("/auth/login");
     if (error.response?.status === 401) {
-      redirectToLogin();
+      if (!isAuthRequest) {
+        redirectToLogin();
+      }
     } else if (error.response?.status === 403) {
       const msg = error.response?.data?.message || "";
       if (msg.includes("organization") || msg.includes("Not authenticated") || msg.includes("No token")) {
@@ -84,6 +98,8 @@ export interface AppointmentData {
   doctorId: string;
   notes?: string;
   consultationFee?: number;
+  date?: string;
+  validUntil?: string;
 }
 
 export interface ConsultationData {
@@ -147,6 +163,7 @@ export const appointmentApi = {
   create: (data: AppointmentData) => api.post("/appointments", data),
   getByDoctor: (doctorId: string) => api.get(`/appointments/doctor/${doctorId}`),
   getQueue: (doctorId: string) => api.get(`/appointments/queue/${doctorId}`),
+  getByDate: (date?: string) => api.get("/appointments/by-date", { params: { date: date || undefined } }),
   updateStatus: (id: string, status: string) =>
     api.put(`/appointments/${id}/status`, { status }),
 };
@@ -215,29 +232,67 @@ export interface Plan {
   name: string;
   description: string | null;
   price: number;
+  yearlyPrice?: number | null;
+  billingCycle: string;
   maxUsers: number;
-  maxPatients: number;
+  maxDoctors: number;
+  trialDays: number;
+  modules: string[];
   features: string[];
   isActive: boolean;
+  sortOrder: number;
   _count?: { subscriptions: number };
+}
+
+export interface PlanAddon {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  module: string;
+  isActive: boolean;
+}
+
+export interface SubscriptionHistory {
+  id: string;
+  action: string;
+  fromPlanName: string | null;
+  toPlanName: string | null;
+  cycle: string;
+  note: string | null;
+  createdAt: string;
 }
 
 export interface Subscription {
   id: string;
   startDate: string;
   endDate: string | null;
+  trialEndsAt: string | null;
+  renewedAt: string | null;
+  autoRenew: boolean;
+  cycle: string;
   status: string;
+  cancelledAt: string | null;
   plan: Plan;
+  history?: SubscriptionHistory[];
 }
 
 export const billingApi = {
   getPlans: () => api.get("/billing/plans"),
   getPlan: (id: string) => api.get(`/billing/plans/${id}`),
-  createPlan: (data: Omit<Plan, "id" | "isActive" | "_count">) => api.post("/billing/plans", data),
+  createPlan: (data: Partial<Omit<Plan, "id" | "isActive" | "_count">>) => api.post("/billing/plans", data),
   updatePlan: (id: string, data: Partial<Plan>) => api.put(`/billing/plans/${id}`, data),
   getSubscription: () => api.get("/billing/subscription"),
-  subscribe: (planId: string, months?: number) => api.post("/billing/subscription", { planId, months }),
+  subscribe: (planId: string, months?: number, cycle?: string) =>
+    api.post("/billing/subscription", { planId, months, cycle }),
   cancelSubscription: (id: string) => api.put(`/billing/subscription/${id}/cancel`),
+  getAddons: () => api.get("/billing/addons"),
+  createAddon: (data: { name: string; description?: string; price?: number; module: string }) => api.post("/billing/addons", data),
+  updateAddon: (id: string, data: Partial<PlanAddon>) => api.put(`/billing/addons/${id}`, data),
+  deleteAddon: (id: string) => api.delete(`/billing/addons/${id}`),
+  getOrgAddons: () => api.get("/billing/org-addons"),
+  addOrgAddon: (addonId: string) => api.post("/billing/org-addons", { addonId }),
+  removeOrgAddon: (addonId: string) => api.delete(`/billing/org-addons/${addonId}`),
 };
 
 export const auditLogApi = {
@@ -304,6 +359,7 @@ export const patientPortalApi = {
   getAppointments: () => api.get("/patient/appointments"),
   bookAppointment: (data: { doctorId: string; notes?: string }) =>
     api.post("/patient/appointments", data),
+  cancelAppointment: (id: string) => api.put(`/patient/appointments/${id}/cancel`),
   getDoctors: () => api.get("/patient/doctors"),
   getPrescriptions: () => api.get("/patient/prescriptions"),
   getLabResults: () => api.get("/patient/lab-results"),
@@ -356,21 +412,35 @@ export const schedulingApi = {
 export const adminApi = {
   getStats: () => api.get("/admin/stats"),
   getRevenue: () => api.get("/admin/revenue"),
+  getSystemAuditLogs: (filters?: { organizationId?: string; entity?: string; action?: string; page?: number; limit?: number }) =>
+    api.get("/admin/audit-logs", { params: filters }),
   getOrganizations: () => api.get("/admin/organizations"),
   getOrganization: (id: string) => api.get(`/admin/organizations/${id}`),
-  createOrganization: (data: { name: string; slug: string; email?: string; phone?: string; address?: string }) =>
+  createOrganization: (data: { name: string; slug: string; email?: string; phone?: string; address?: string; timezone?: string; currency?: string }) =>
     api.post("/admin/organizations", data),
-  updateOrganization: (id: string, data: { name?: string; email?: string; phone?: string; address?: string; isActive?: boolean }) =>
-    api.put(`/admin/organizations/${id}`, data),
+  updateOrganization: (id: string, data: {
+    name?: string; email?: string; phone?: string; address?: string;
+    logo?: string; timezone?: string; currency?: string;
+    gstVat?: string; hospitalLicense?: string; isActive?: boolean;
+  }) => api.put(`/admin/organizations/${id}`, data),
+  deleteOrganization: (id: string) => api.delete(`/admin/organizations/${id}`),
   getUsers: () => api.get("/admin/users"),
   updateUser: (id: string, data: { isActive?: boolean; role?: string }) =>
     api.put(`/admin/users/${id}`, data),
   getFeatureFlags: (orgId: string) => api.get(`/admin/organizations/${orgId}/feature-flags`),
   setFeatureFlag: (orgId: string, key: string, isEnabled: boolean) =>
     api.put(`/admin/organizations/${orgId}/feature-flags`, { key, isEnabled }),
+  bulkSetFeatureFlags: (orgId: string, flags: { key: string; isEnabled: boolean }[]) =>
+    api.put(`/admin/organizations/${orgId}/feature-flags/bulk`, { flags }),
   getSettings: () => api.get("/admin/settings"),
   setSetting: (key: string, value: string, category?: string) =>
     api.put("/admin/settings", { key, value, category }),
+  // Cross-org subscription management
+  getAllSubscriptions: () => api.get("/billing/all-subscriptions"),
+  forceAssignPlan: (orgId: string, planId: string, months?: number, note?: string) =>
+    api.put(`/billing/orgs/${orgId}/subscription/assign`, { planId, months, note }),
+  forceCancelSubscription: (orgId: string, note?: string) =>
+    api.put(`/billing/orgs/${orgId}/subscription/cancel`, { note }),
 };
 
 export const publicOrgApi = {

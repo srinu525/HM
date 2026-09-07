@@ -35,6 +35,7 @@ interface Patient {
   dob: string | null;
   address: string | null;
   createdAt: string;
+  _count?: { appointments: number };
 }
 
 export default function PatientsPage() {
@@ -332,6 +333,11 @@ export default function PatientsPage() {
                         DOB: {patient.dob ? new Date(patient.dob).toLocaleDateString() : "N/A"}
                         {patient.address && ` | ${patient.address}`}
                       </p>
+                      {typeof patient._count?.appointments === "number" && patient._count.appointments > 0 && (
+                        <span className="inline-flex items-center gap-1 mt-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2 py-0.5">
+                          {patient._count.appointments} visit{patient._count.appointments !== 1 ? "s" : ""}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

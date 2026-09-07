@@ -18,6 +18,7 @@ interface SidebarItem {
   icon: React.ComponentType<{ className?: string }>;
   permission?: string;
   module?: string;
+  roles?: string[];
 }
 
 interface SidebarGroup {
@@ -34,25 +35,27 @@ const sidebarConfig: SidebarGroup[] = [
     ],
   },
   {
-    label: "Clinical",
-    module: "patients",
+    label: "Reception",
     items: [
-      { href: "/dashboard/patients", label: "Patients", icon: Users, module: "patients" },
-      { href: "/dashboard/appointments", label: "Appointments", icon: Calendar, module: "appointments" },
-      { href: "/dashboard/queue", label: "Queue", icon: Users, module: "appointments" },
-      { href: "/dashboard/consultations", label: "Consultations", icon: Stethoscope, module: "consultations" },
-      { href: "/dashboard/prescriptions", label: "Prescriptions", icon: FileText, module: "prescriptions" },
-      { href: "/dashboard/lab", label: "Lab", icon: TestTube, module: "lab" },
+      { href: "/dashboard/reception", label: "Reception", icon: Calendar, roles: ["RECEPTIONIST"] },
+    ],
+  },
+  {
+    label: "Clinical",
+    items: [
+      { href: "/dashboard/patients", label: "Patients", icon: Users, roles: ["DOCTOR"] },
+      { href: "/dashboard/consultations", label: "Consultations", icon: Stethoscope, roles: ["DOCTOR"] },
+      { href: "/dashboard/prescriptions", label: "Prescriptions", icon: FileText, roles: ["DOCTOR"] },
+      { href: "/dashboard/lab", label: "Lab", icon: TestTube, roles: ["DOCTOR", "PHARMACIST"] },
     ],
   },
   {
     label: "Pharmacy",
     module: "pharmacy",
     items: [
-      { href: "/dashboard/pharmacy", label: "Overview", icon: Pill, module: "pharmacy" },
-      { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill, module: "pharmacy" },
-      { href: "/dashboard/pharmacy/sales", label: "Sales", icon: ShoppingCart, module: "pharmacy" },
-      { href: "/dashboard/prescriptions", label: "Prescriptions", icon: FileText, module: "prescriptions" },
+      { href: "/dashboard/pharmacy", label: "Overview", icon: Pill, module: "pharmacy", roles: ["PHARMACIST"] },
+      { href: "/dashboard/pharmacy/inventory", label: "Inventory", icon: Pill, module: "pharmacy", roles: ["PHARMACIST"] },
+      { href: "/dashboard/pharmacy/sales", label: "Sales", icon: ShoppingCart, module: "pharmacy", roles: ["PHARMACIST"] },
     ],
   },
   {
@@ -64,20 +67,20 @@ const sidebarConfig: SidebarGroup[] = [
   {
     label: "Admin",
     items: [
-      { href: "/dashboard/admin/users", label: "Users", icon: Users, module: "users" },
-      { href: "/dashboard/admin/departments", label: "Departments", icon: Building, module: "departments" },
-      { href: "/dashboard/admin/roles", label: "Roles & Permissions", icon: Shield, module: "departments" },
-      { href: "/dashboard/admin/schedules", label: "Schedules", icon: CalendarClock, module: "departments" },
-      { href: "/dashboard/admin/settings", label: "Settings", icon: Settings, module: "settings" },
-      { href: "/dashboard/organizations", label: "Organizations", icon: Building2, permission: "departments.read" },
-      { href: "/dashboard/billing/subscriptions", label: "Subscription", icon: CreditCard, permission: "departments.read" },
-      { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History, module: "audit-logs" },
+      { href: "/dashboard/admin/users", label: "Users", icon: Users, roles: ["ADMIN"] },
+      { href: "/dashboard/admin/departments", label: "Departments", icon: Building, roles: ["ADMIN"] },
+      { href: "/dashboard/admin/roles", label: "Roles & Permissions", icon: Shield, roles: ["ADMIN"] },
+      { href: "/dashboard/admin/schedules", label: "Schedules", icon: CalendarClock, roles: ["ADMIN"] },
+      { href: "/dashboard/admin/settings", label: "Settings", icon: Settings, roles: ["ADMIN"] },
+      { href: "/dashboard/organizations", label: "Organizations", icon: Building2, roles: ["ADMIN"] },
+      { href: "/dashboard/billing/subscriptions", label: "Subscription", icon: CreditCard, roles: ["ADMIN"] },
+      { href: "/dashboard/audit-logs", label: "Audit Logs", icon: History, roles: ["ADMIN"] },
     ],
   },
   {
     label: "Reports",
     items: [
-      { href: "/dashboard/reports", label: "Reports", icon: FileText, module: "reports" },
+      { href: "/dashboard/reports", label: "Reports", icon: FileText, roles: ["ADMIN", "RECEPTIONIST"] },
     ],
   },
   {
@@ -123,6 +126,7 @@ export default function DashboardLayout({
   const isItemVisible = (item: SidebarItem) => {
     if (!mounted || isLoading) return true;
     if (isSuperAdmin) return true;
+    if (item.roles && item.roles.length > 0) return item.roles.includes(user?.role ?? "");
     if (item.permission) return hasPermission(item.permission);
     if (item.module) return hasModule(item.module);
     return true;
@@ -149,6 +153,19 @@ export default function DashboardLayout({
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
+      )}
+
+      {/* Show full-screen loader until auth resolves — prevents sidebar flash */}
+      {(!mounted || isLoading) && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 z-50">
+          <div className="flex flex-col items-center gap-3">
+            <svg className="animate-spin h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            <p className="text-sm text-gray-500">Loading...</p>
+          </div>
+        </div>
       )}
 
       <aside className={`

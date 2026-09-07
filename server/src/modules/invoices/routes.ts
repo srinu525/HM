@@ -1,18 +1,17 @@
 import { Router } from "express";
 import { invoiceController } from "./controller";
-import { authorize } from "../../middleware/auth";
+import { authorizePermission } from "../permissions/middleware";
 
 const router = Router();
 
-router.get("/stats", authorize("ADMIN", "RECEPTIONIST"), invoiceController.getStats);
-router.get("/", authorize("ADMIN", "RECEPTIONIST"), invoiceController.getAll);
-router.get("/:id", authorize("ADMIN", "RECEPTIONIST"), invoiceController.getById);
-router.post("/", authorize("ADMIN", "RECEPTIONIST"), invoiceController.create);
-router.put("/:id/status", authorize("ADMIN"), invoiceController.updateStatus);
-router.delete("/:id", authorize("ADMIN"), invoiceController.delete);
-router.get("/:id/pdf", authorize("ADMIN", "RECEPTIONIST"), invoiceController.downloadPdf);
-
-router.post("/payments", authorize("ADMIN", "RECEPTIONIST"), invoiceController.recordPayment);
-router.get("/payments/list", authorize("ADMIN", "RECEPTIONIST"), invoiceController.getPayments);
+router.get("/stats", authorizePermission("invoices.read"), invoiceController.getStats);
+router.get("/payments/list", authorizePermission("invoices.read"), invoiceController.getPayments);
+router.get("/", authorizePermission("invoices.read"), invoiceController.getAll);
+router.get("/:id", authorizePermission("invoices.read"), invoiceController.getById);
+router.get("/:id/pdf", authorizePermission("invoices.read"), invoiceController.downloadPdf);
+router.post("/", authorizePermission("invoices.create"), invoiceController.create);
+router.post("/payments", authorizePermission("invoices.create"), invoiceController.recordPayment);
+router.put("/:id/status", authorizePermission("invoices.update"), invoiceController.updateStatus);
+router.delete("/:id", authorizePermission("invoices.delete"), invoiceController.delete);
 
 export default router;

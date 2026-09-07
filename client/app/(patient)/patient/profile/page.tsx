@@ -30,6 +30,9 @@ export default function PatientProfilePage() {
       setGender(d.gender || "");
       setAge(d.age ? String(d.age) : "");
       setDob(d.dob ? new Date(d.dob).toISOString().split("T")[0] : "");
+    }).catch((err) => {
+      console.error(err);
+      setMsg("Failed to load profile");
     }).finally(() => setLoading(false));
   }, []);
 

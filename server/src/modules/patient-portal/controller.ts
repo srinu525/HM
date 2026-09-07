@@ -77,6 +77,16 @@ export class PatientPortalController {
     } catch (error) { next(error); }
   }
 
+  async cancelAppointment(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const appointment = await patientPortalService.cancelAppointment(
+        req.params.id as string,
+        req.user!.id
+      );
+      sendSuccess(res, appointment, "Appointment cancelled");
+    } catch (error) { next(error); }
+  }
+
   async getDoctors(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const doctors = await patientPortalService.getDoctors?.(req.user!.organizationId as string);

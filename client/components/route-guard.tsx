@@ -8,9 +8,11 @@ import { ShieldAlert } from "lucide-react";
 interface RoutePermission {
   permissions?: string[];
   module?: string;
+  roles?: string[];
 }
 
 const routePermissions: Record<string, RoutePermission> = {
+  "/dashboard/reception": { roles: ["RECEPTIONIST"] },
   "/dashboard/patients": { module: "patients" },
   "/dashboard/appointments": { module: "appointments" },
   "/dashboard/queue": { module: "appointments" },
@@ -21,21 +23,21 @@ const routePermissions: Record<string, RoutePermission> = {
   "/dashboard/pharmacy/sales": { module: "pharmacy" },
   "/dashboard/lab": { module: "lab" },
   "/dashboard/billing/invoices": { module: "invoices" },
-  "/dashboard/billing/subscriptions": { permissions: ["departments.read"] },
-  "/dashboard/admin/users": { module: "users" },
-  "/dashboard/admin/departments": { module: "departments" },
-  "/dashboard/admin/roles": { module: "departments" },
-  "/dashboard/admin/schedules": { module: "departments" },
-  "/dashboard/admin/settings": { module: "settings" },
-  "/dashboard/organizations": { permissions: ["departments.read"] },
-  "/dashboard/audit-logs": { module: "audit-logs" },
-  "/dashboard/reports": { module: "reports" },
-  "/patient": { permissions: [] },
-  "/patient/appointments": { permissions: [] },
-  "/patient/prescriptions": { permissions: [] },
-  "/patient/lab-results": { permissions: [] },
-  "/patient/invoices": { permissions: [] },
-  "/patient/profile": { permissions: [] },
+  "/dashboard/billing/subscriptions": { roles: ["ADMIN"] },
+  "/dashboard/admin/users": { roles: ["ADMIN"] },
+  "/dashboard/admin/departments": { roles: ["ADMIN"] },
+  "/dashboard/admin/roles": { roles: ["ADMIN"] },
+  "/dashboard/admin/schedules": { roles: ["ADMIN"] },
+  "/dashboard/admin/settings": { roles: ["ADMIN"] },
+  "/dashboard/organizations": { roles: ["ADMIN"] },
+  "/dashboard/audit-logs": { roles: ["ADMIN", "SUPER_ADMIN"] },
+  "/dashboard/reports": { roles: ["ADMIN", "RECEPTIONIST"] },
+  "/patient": { roles: ["PATIENT"] },
+  "/patient/appointments": { roles: ["PATIENT"] },
+  "/patient/prescriptions": { roles: ["PATIENT"] },
+  "/patient/lab-results": { roles: ["PATIENT"] },
+  "/patient/invoices": { roles: ["PATIENT"] },
+  "/patient/profile": { roles: ["PATIENT"] },
 };
 
 function matchRoute(pathname: string): RoutePermission | null {
@@ -60,9 +62,22 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoading && !user) {
       const savedSlug = localStorage.getItem("orgSlug") || "default-hospital";
-      router.push(`/${savedSlug}/login`);
+      const role = localStorage.getItem("userRole");
+      if (role === "SUPER_ADMIN") {
+        router.push("/super-admin");
+      } else {
+        router.push(`/${savedSlug}/login`);
+      }
     }
-  }, [user, isLoading, router]);
+    // Redirect super admin away from /dashboard to /admin
+    if (!isLoading && user?.role === "SUPER_ADMIN" && pathname.startsWith("/dashboard")) {
+      router.replace("/admin");
+    }
+    // Redirect non-super-admins away from /admin
+    if (!isLoading && user && user.role !== "SUPER_ADMIN" && pathname.startsWith("/admin")) {
+      router.replace("/dashboard");
+    }
+  }, [user, isLoading, router, pathname]);
 
   if (isLoading) {
     return (
@@ -105,6 +120,7 @@ function isSuperAdminOrAllowed(
   hasModule: (m: string) => boolean,
 ): boolean {
   if (role === "SUPER_ADMIN") return true;
+  if (config.roles && config.roles.length > 0) return config.roles.includes(role ?? "");
   if (config.module) return hasModule(config.module);
   if (config.permissions && config.permissions.length > 0) return hasAnyPermission(...config.permissions);
   return true;

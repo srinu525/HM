@@ -125,8 +125,9 @@ export class PermissionService {
   }
 
   async seedPermissions() {
-    const results: { created: number; skipped: number } = { created: 0, skipped: 0 };
+    const results: { created: number; skipped: number; rolesAssigned: number } = { created: 0, skipped: 0, rolesAssigned: 0 };
 
+    // 1. Upsert all permission rows
     for (const def of DEFAULT_PERMISSIONS) {
       const name = `${def.module}.${def.action}`;
       const existing = await prisma.permission.findUnique({ where: { name } });
@@ -140,10 +141,56 @@ export class PermissionService {
       results.created++;
     }
 
+    // 2. Assign permissions to roles (idempotent)
+    const ROLE_PERMISSIONS: Record<string, string[]> = {
+      ADMIN: [
+        "users.read", "users.create", "users.update", "users.delete",
+        "departments.read", "departments.create", "departments.update", "departments.delete",
+        "settings.read", "settings.update",
+        "audit-logs.read", "reports.read",
+        "invoices.read", "invoices.create", "invoices.update", "invoices.delete",
+        "notifications.read", "notifications.create",
+        "patients.read", "appointments.read", "prescriptions.read",
+      ],
+      RECEPTIONIST: [
+        "patients.read", "patients.create", "patients.update",
+        "appointments.read", "appointments.create", "appointments.update",
+        "invoices.read", "invoices.create", "invoices.update",
+        "notifications.read", "reports.read",
+      ],
+      DOCTOR: [
+        "patients.read",
+        "appointments.read", "appointments.update",
+        "consultations.read", "consultations.create", "consultations.update",
+        "prescriptions.read", "prescriptions.create",
+        "pharmacy.read",
+        "lab.read", "lab.create", "lab.update",
+        "notifications.read",
+      ],
+      PHARMACIST: [
+        "patients.read",
+        "pharmacy.read", "pharmacy.create", "pharmacy.update", "pharmacy.delete",
+        "prescriptions.read", "lab.read", "notifications.read",
+      ],
+    };
+
+    for (const [role, permNames] of Object.entries(ROLE_PERMISSIONS)) {
+      // Clear and re-assign for idempotency
+      await prisma.rolePermission.deleteMany({ where: { role: role as Role } });
+      for (const name of permNames) {
+        const permission = await prisma.permission.findUnique({ where: { name } });
+        if (!permission) continue;
+        await prisma.rolePermission.create({
+          data: { role: role as Role, permissionId: permission.id },
+        });
+        results.rolesAssigned++;
+      }
+    }
+
     return results;
   }
 
-  async getMyPermissions(userId: string, role: Role, organizationId: string): Promise<string[]> {
+  async getMyPermissions(userId: string, role: Role, organizationId: string | null): Promise<string[]> {
     if (role === "SUPER_ADMIN") {
       const all = await prisma.permission.findMany();
       return all.map((p) => p.name);

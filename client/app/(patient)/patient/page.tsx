@@ -2,9 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { patientPortalApi } from "@/lib/api";
-import { useAuth } from "@/contexts/auth-context";
 import { Calendar, Pill, TestTube, CreditCard, UserRound, ArrowRight } from "lucide-react";
 import Link from "next/link";
+
+function getStoredPatient() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
 
 interface Appointment {
   id: string;
@@ -17,13 +24,18 @@ interface Appointment {
 }
 
 export default function PatientDashboard() {
-  const { user } = useAuth();
+  const [patient, setPatient] = useState<any>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    setPatient(getStoredPatient());
     patientPortalApi.getAppointments().then((res) => {
       setAppointments(res.data.data || []);
+    }).catch((err) => {
+      console.error(err);
+      setError("Failed to load appointments");
     }).finally(() => setLoading(false));
   }, []);
 
@@ -43,7 +55,7 @@ export default function PatientDashboard() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {user?.name?.split(" ")[0] || "Patient"}
+          Welcome back, {patient?.name?.split(" ")[0] || "Patient"}
         </h1>
         <p className="text-gray-500 mt-1">Here&apos;s your health summary</p>
       </div>
@@ -93,6 +105,8 @@ export default function PatientDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           {loading ? (
             <div className="p-6 text-center text-gray-500">Loading...</div>
+          ) : error ? (
+            <div className="p-6 text-center text-red-500">{error}</div>
           ) : appointments.length === 0 ? (
             <div className="p-6 text-center text-gray-500">No appointments yet</div>
           ) : (

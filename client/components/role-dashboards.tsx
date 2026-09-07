@@ -19,6 +19,11 @@ import {
   Activity,
   TrendingUp,
   Building2,
+  Shield,
+  Building,
+  CalendarClock,
+  Bell,
+  CheckCircle2,
 } from "lucide-react";
 
 interface QueueItem {
@@ -26,6 +31,22 @@ interface QueueItem {
   token: number;
   status: string;
   patient: { name: string; phone: string | null };
+}
+
+interface TodayApptStats {
+  id: string;
+  token: number;
+  status: string;
+  doctor: { id: string; name: string };
+}
+
+interface DoctorApptStats {
+  id: string;
+  name: string;
+  scheduled: number;
+  inQueue: number;
+  completed: number;
+  cancelled: number;
 }
 
 interface LowStockMedicine {
@@ -54,8 +75,7 @@ interface PharmacistStats {
 }
 
 interface ReceptionistStats {
-  queue: QueueItem[];
-  todayAppointments: number;
+  appointments: TodayApptStats[];
 }
 
 export function DoctorDashboard() {
@@ -276,35 +296,41 @@ export function PharmacistDashboard() {
   );
 }
 
-export function ReceptionistDashboard() {
-  const [stats, setStats] = useState<ReceptionistStats | null>(null);
+function AppointmentStatusSection({ appointments }: { appointments: TodayApptStats[] }) {
+  const scheduled = appointments.filter((a) => a.status === "SCHEDULED").length;
+  const inQueue = appointments.filter((a) => ["SCHEDULED", "IN_PROGRESS"].includes(a.status)).length;
+  const completed = appointments.filter((a) => a.status === "COMPLETED").length;
+  const cancelled = appointments.filter((a) => a.status === "CANCELLED").length;
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const apptsRes = await api.get("/appointments");
-        const appts = apptsRes.data.data || [];
-        setStats({
-          queue: appts.filter((a: QueueItem) => ["SCHEDULED", "IN_PROGRESS"].includes(a.status)).slice(0, 10),
-          todayAppointments: appts.length,
-        });
-      } catch (e) { console.error(e); }
-    }
-    load();
-  }, []);
-
-  if (!stats) return <div className="animate-pulse space-y-4">{[1, 2].map(i => <Card key={i}><CardContent className="p-6 h-24 bg-gray-100 rounded" /></Card>)}</div>;
+  const doctorMap = new Map<string, DoctorApptStats>();
+  for (const appt of appointments) {
+    const doc = appt.doctor || { id: "unknown", name: "Unknown" };
+    const rec = doctorMap.get(doc.id) || {
+      id: doc.id,
+      name: doc.name,
+      scheduled: 0,
+      inQueue: 0,
+      completed: 0,
+      cancelled: 0,
+    };
+    if (appt.status === "SCHEDULED") rec.scheduled++;
+    if (["SCHEDULED", "IN_PROGRESS"].includes(appt.status)) rec.inQueue++;
+    if (appt.status === "COMPLETED") rec.completed++;
+    if (appt.status === "CANCELLED") rec.cancelled++;
+    doctorMap.set(doc.id, rec);
+  }
+  const doctors = Array.from(doctorMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="hover:shadow-lg transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Today&apos;s Appointments</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.todayAppointments}</p>
-                <p className="text-xs text-gray-500 mt-1">Scheduled for today</p>
+                <p className="text-sm font-medium text-gray-600">Scheduled</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{scheduled}</p>
+                <p className="text-xs text-gray-500 mt-1">Booked for today</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-blue-600" />
@@ -317,16 +343,95 @@ export function ReceptionistDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">In Queue</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.queue.length}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{inQueue}</p>
                 <p className="text-xs text-gray-500 mt-1">Awaiting consultation</p>
               </div>
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-yellow-600" />
+                <Clock className="w-6 h-6 text-yellow-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Completed</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{completed}</p>
+                <p className="text-xs text-gray-500 mt-1">Consultations done today</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5" />
+            Today&apos;s Appointments by Doctor
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {doctors.length === 0 ? (
+            <div className="flex flex-col items-center py-10 text-center">
+              <Calendar className="h-10 w-10 text-gray-300 mb-2" />
+              <p className="text-gray-500">No appointments today</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-gray-500">
+                    <th className="py-2 pr-4 font-medium">Doctor</th>
+                    <th className="py-2 px-4 font-medium text-center">Scheduled</th>
+                    <th className="py-2 px-4 font-medium text-center">In Queue</th>
+                    <th className="py-2 px-4 font-medium text-center">Completed</th>
+                    {cancelled > 0 && <th className="py-2 pl-4 font-medium text-center">Cancelled</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {doctors.map((doc) => (
+                    <tr key={doc.id} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 pr-4 font-medium text-gray-900">{doc.name}</td>
+                      <td className="py-3 px-4 text-center">{doc.scheduled}</td>
+                      <td className="py-3 px-4 text-center">{doc.inQueue}</td>
+                      <td className="py-3 px-4 text-center">{doc.completed}</td>
+                      {cancelled > 0 && <td className="py-3 pl-4 text-center">{doc.cancelled}</td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+export function ReceptionistDashboard() {
+  const [stats, setStats] = useState<ReceptionistStats | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const apptsRes = await api.get("/appointments");
+        const appts = apptsRes.data.data || [];
+        setStats({ appointments: appts });
+      } catch (e) { console.error(e); }
+    }
+    load();
+  }, []);
+
+  if (!stats) return <div className="animate-pulse space-y-4">{[1, 2].map(i => <Card key={i}><CardContent className="p-6 h-24 bg-gray-100 rounded" /></Card>)}</div>;
+
+  return (
+    <div className="space-y-6">
+      <AppointmentStatusSection appointments={stats.appointments} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link href="/dashboard/patients">
@@ -350,6 +455,143 @@ export function ReceptionistDashboard() {
             <CardContent className="p-4 flex items-center gap-3">
               <Clock className="h-5 w-5 text-yellow-600" />
               <span className="font-medium">View Queue</span>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+interface AdminStats {
+  totalUsers: number;
+  activeDoctors: number;
+  totalDepartments: number;
+  todayAppointments: number;
+  pendingLeaves: number;
+  todayRevenue: number;
+  appointments: TodayApptStats[];
+}
+
+export function AdminDashboard() {
+  const [stats, setStats] = useState<AdminStats | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [usersRes, doctorsRes, deptsRes, apptsRes, leavesRes, analyticsRes] = await Promise.all([
+          api.get("/users"),
+          api.get("/users/doctors"),
+          api.get("/departments"),
+          api.get("/appointments").catch(() => ({ data: { data: [] } })),
+          api.get("/scheduling/leaves").catch(() => ({ data: { data: [] } })),
+          api.get("/stats/analytics").catch(() => ({ data: { data: { todayRevenue: 0 } } })),
+        ]);
+        const users = usersRes.data.data ?? [];
+        const leaves = leavesRes.data.data ?? [];
+        setStats({
+          totalUsers: users.length,
+          activeDoctors: (doctorsRes.data.data ?? []).length,
+          totalDepartments: (deptsRes.data.data ?? []).length,
+          todayAppointments: (apptsRes.data.data ?? []).length,
+          pendingLeaves: leaves.filter((l: { status: string }) => l.status === "PENDING").length,
+          todayRevenue: analyticsRes.data.data?.todayRevenue ?? 0,
+          appointments: apptsRes.data.data ?? [],
+        });
+      } catch (e) { console.error(e); }
+    }
+    load();
+  }, []);
+
+  if (!stats) return <div className="animate-pulse space-y-4">{[1, 2, 3].map(i => <Card key={i}><CardContent className="p-6 h-24 bg-gray-100 rounded" /></Card>)}</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Staff</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalUsers}</p>
+                <p className="text-xs text-gray-500 mt-1">{stats.activeDoctors} active doctors</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Departments</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalDepartments}</p>
+                <p className="text-xs text-gray-500 mt-1">Active departments</p>
+              </div>
+              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
+                <Building className="w-6 h-6 text-cyan-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pending Leaves</p>
+                <p className={`text-3xl font-bold mt-2 ${stats.pendingLeaves > 0 ? "text-orange-600" : "text-gray-900"}`}>
+                  {stats.pendingLeaves}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Awaiting approval</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <CalendarClock className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Today&apos;s Revenue</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">₹{stats.todayRevenue.toLocaleString()}</p>
+                <p className="text-xs text-gray-500 mt-1">Today&apos;s earnings</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <AppointmentStatusSection appointments={stats.appointments} />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link href="/dashboard/admin/users">
+          <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Users className="h-5 w-5 text-blue-600" />
+              <span className="font-medium">Manage Staff</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/dashboard/admin/departments">
+          <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Building className="h-5 w-5 text-cyan-600" />
+              <span className="font-medium">Departments</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/dashboard/admin/schedules">
+          <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
+            <CardContent className="p-4 flex items-center gap-3">
+              <CalendarClock className="h-5 w-5 text-orange-600" />
+              <span className="font-medium">Schedules & Leaves</span>
             </CardContent>
           </Card>
         </Link>
@@ -490,7 +732,7 @@ export function SuperAdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/dashboard/organizations">
+        <Link href="/admin/organizations">
           <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
             <CardContent className="p-4 flex items-center gap-3">
               <Building2 className="h-5 w-5 text-blue-600" />
@@ -498,7 +740,7 @@ export function SuperAdminDashboard() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/dashboard/billing/subscriptions">
+        <Link href="/admin/subscriptions">
           <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
             <CardContent className="p-4 flex items-center gap-3">
               <Pill className="h-5 w-5 text-purple-600" />
@@ -506,7 +748,7 @@ export function SuperAdminDashboard() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/dashboard/admin/users">
+        <Link href="/admin/users">
           <Card className="hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
             <CardContent className="p-4 flex items-center gap-3">
               <Users className="h-5 w-5 text-green-600" />

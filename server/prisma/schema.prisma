@@ -58,28 +58,67 @@ model Organization {
   departments  Department[]
   settings     OrgSetting[]
   leaveRequests LeaveRequest[]
+  orgAddons    OrgAddon[]
 }
 
 model Plan {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  description  String?
+  price        Float    @default(0)
+  yearlyPrice  Float?
+  billingCycle String   @default("MONTHLY") // MONTHLY | YEARLY | BOTH
+  maxUsers     Int      @default(5)
+  maxDoctors   Int      @default(1)
+  trialDays    Int      @default(0)
+  modules      Json     @default("[]")
+  features     String[]
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model PlanAddon {
   id          String   @id @default(uuid())
   name        String   @unique
   description String?
   price       Float    @default(0)
-  maxUsers    Int      @default(5)
-  maxPatients Int      @default(100)
-  features    String[]
+  module      String
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  subscriptions Subscription[]
+  orgAddons OrgAddon[]
+}
+
+model OrgAddon {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  addonId        String
+  addon          PlanAddon  @relation(fields: [addonId], references: [id])
+  status         String   @default("ACTIVE")
+  startDate      DateTime @default(now())
+  endDate        DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, addonId])
 }
 
 model Subscription {
   id             String   @id @default(uuid())
   startDate      DateTime @default(now())
   endDate        DateTime?
-  status         String   @default("ACTIVE")
+  trialEndsAt    DateTime?
+  renewedAt      DateTime?
+  autoRenew      Boolean  @default(true)
+  cycle          String   @default("MONTHLY") // MONTHLY | YEARLY
+  status         String   @default("ACTIVE")  // ACTIVE | CANCELLED | EXPIRED | TRIAL
+  cancelledAt    DateTime?
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   planId         String
@@ -88,8 +127,25 @@ model Subscription {
   updatedAt      DateTime @updatedAt
 
   invoices Invoice[]
+  history  SubscriptionHistory[]
 
-  @@unique([organizationId, planId])
+  @@unique([organizationId])
+}
+
+model SubscriptionHistory {
+  id             String   @id @default(uuid())
+  action         String   // SUBSCRIBED | UPGRADED | DOWNGRADED | CANCELLED | RENEWED | TRIAL_STARTED
+  fromPlanId     String?
+  fromPlanName   String?
+  toPlanId       String?
+  toPlanName     String?
+  cycle          String   @default("MONTHLY")
+  note           String?
+  createdAt      DateTime @default(now())
+
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  organizationId String
 }
 
 model AuditLog {
@@ -217,6 +273,7 @@ model Appointment {
   validUntil      DateTime?
   notes           String?
   consultationFee Float             @default(0)
+  vitals          Json?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -234,6 +291,8 @@ model Consultation {
   id        String   @id @default(uuid())
   diagnosis String?
   notes     String?
+  vitalSigns Json?
+  followUpDate DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -247,6 +306,7 @@ model Consultation {
 
 model Prescription {
   id        String   @id @default(uuid())
+  status    String   @default("PENDING")
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -257,6 +317,7 @@ model Prescription {
   patient        Patient      @relation(fields: [patientId], references: [id])
 
   items PrescriptionItem[]
+  sales Sale[]
 }
 
 model PrescriptionItem {
@@ -299,6 +360,9 @@ model Sale {
 
   patientId String
   patient   Patient  @relation(fields: [patientId], references: [id])
+
+  prescriptionId String?
+  prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
 
   items SaleItem[]
 }

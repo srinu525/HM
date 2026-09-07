@@ -32,6 +32,13 @@ export class PatientService {
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
+        include: {
+          _count: {
+            select: {
+              appointments: { where: { status: { not: "CANCELLED" } } },
+            },
+          },
+        },
       }),
       prisma.patient.count({ where }),
     ]);

@@ -48,10 +48,29 @@ export class PharmacyService {
     return { lowStock, expiringSoon, expired };
   }
 
-  async createSale(data: { patientId: string; items: { medicineId: string; quantity: number }[] }, organizationId: string) {
+  async createSale(data: { patientId: string; items: { medicineId: string; quantity: number }[]; prescriptionId?: string }, organizationId: string) {
+    let prescription: { id: string; status: string; patientId: string } | null = null;
+    if (data.prescriptionId) {
+      prescription = await prisma.prescription.findFirst({
+        where: {
+          id: data.prescriptionId,
+          patient: { organizationId },
+          patientId: data.patientId,
+        },
+        select: { id: true, status: true, patientId: true },
+      });
+      if (!prescription) {
+        throw AppError.notFound("Prescription not found for this patient");
+      }
+      if (prescription.status === "DISPENSED") {
+        throw AppError.badRequest("This prescription has already been dispensed");
+      }
+    }
+
     let total = 0;
-    const saleItems = [];
+    const saleItems: { medicineId: string; quantity: number; unitPrice: number; total: number }[] = [];
     const lowStockMedicines = [];
+    const expiryWarnings: { id: string; name: string; expiryDate: string }[] = [];
 
     for (const item of data.items) {
       const medicine = await prisma.medicine.findFirst({ where: { id: item.medicineId, organizationId } });
@@ -64,6 +83,14 @@ export class PharmacyService {
       total += itemTotal;
       saleItems.push({ medicineId: item.medicineId, quantity: item.quantity, unitPrice: medicine.price, total: itemTotal });
 
+      if (medicine.expiryDate) {
+        const now = new Date();
+        const daysUntilExpiry = Math.ceil((medicine.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysUntilExpiry <= 30) {
+          expiryWarnings.push({ id: medicine.id, name: medicine.name, expiryDate: medicine.expiryDate.toISOString() });
+        }
+      }
+
       const newStock = medicine.stock - item.quantity;
       await prisma.medicine.update({ where: { id: item.medicineId }, data: { stock: newStock } });
 
@@ -72,12 +99,28 @@ export class PharmacyService {
       }
     }
 
-    const sale = await prisma.sale.create({
-      data: { patientId: data.patientId, total, items: { create: saleItems } },
-      include: {
-        items: { include: { medicine: { select: { id: true, name: true } } } },
-        patient: { select: { id: true, patientId: true, name: true } },
-      },
+    const sale = await prisma.$transaction(async (tx) => {
+      const created = await tx.sale.create({
+        data: {
+          patientId: data.patientId,
+          total,
+          prescriptionId: data.prescriptionId || undefined,
+          items: { create: saleItems },
+        },
+        include: {
+          items: { include: { medicine: { select: { id: true, name: true } } } },
+          patient: { select: { id: true, patientId: true, name: true } },
+        },
+      });
+
+      if (data.prescriptionId && prescription) {
+        await tx.prescription.update({
+          where: { id: data.prescriptionId },
+          data: { status: "DISPENSED" },
+        });
+      }
+
+      return created;
     });
 
     if (lowStockMedicines.length > 0) {
@@ -88,7 +131,7 @@ export class PharmacyService {
       });
     }
 
-    return sale;
+    return { ...sale, expiryWarnings };
   }
 
   async getSales(organizationId: string) {
@@ -96,6 +139,7 @@ export class PharmacyService {
       include: {
         items: { include: { medicine: { select: { id: true, name: true } } } },
         patient: { select: { id: true, patientId: true, name: true } },
+        prescription: { select: { id: true, status: true } },
       },
       orderBy: { createdAt: "desc" }, take: 50,
     });

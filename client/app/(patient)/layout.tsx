@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Calendar, Pill, TestTube, CreditCard, UserRound, LayoutDashboard, LogOut } from "lucide-react";
 
 function getStoredUser() {
@@ -29,6 +29,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   const [loaded, setLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const u = getStoredUser();
@@ -77,7 +78,11 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
               key={link.href}
               href={link.href}
               onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-emerald-50 text-gray-700 hover:text-emerald-600 transition-colors duration-200"
+              className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                pathname === link.href
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "hover:bg-emerald-50 text-gray-700 hover:text-emerald-600"
+              }`}
             >
               <link.icon className="h-5 w-5" />
               {link.label}

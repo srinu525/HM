@@ -32,11 +32,22 @@ export function NotificationBell() {
 
   useSocket(user?.id, handleNewNotification);
 
+  const fetchNotifications = async () => {
+    if (!user) return;
+    try {
+      const res = await notificationApi.getAll();
+      setNotifications(res.data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
+    if (!user) return;
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -47,15 +58,6 @@ export function NotificationBell() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const fetchNotifications = async () => {
-    try {
-      const res = await notificationApi.getAll();
-      setNotifications(res.data.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   const handleMarkAsRead = async (id: string) => {
     try {

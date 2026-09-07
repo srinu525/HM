@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { api, consultationApi } from "@/lib/api";
+import { api, consultationApi, appointmentApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { History, Printer, ArrowLeft, CheckCircle } from "lucide-react";
+import { History, Printer, ArrowLeft, CheckCircle, HeartPulse } from "lucide-react";
 
 interface QueueItem {
   id: string;
@@ -66,6 +66,8 @@ interface HistoryVisit {
   diagnosis: string | null;
   notes: string | null;
   createdAt: string;
+  followUpDate: string | null;
+  vitalSigns: { bp?: string; temperature?: string; weight?: string; pulse?: string } | null;
   appointment: { date: string; token: number };
   doctor: { name: string };
   prescriptions: {
@@ -79,6 +81,8 @@ interface CompletedConsultation {
   diagnosis: string | null;
   notes: string | null;
   createdAt: string;
+  followUpDate: string | null;
+  vitalSigns: { bp?: string; temperature?: string; weight?: string; pulse?: string } | null;
   appointment: {
     token: number;
     date: string;
@@ -122,6 +126,11 @@ export default function DoctorPage() {
     diagnosis: "",
     notes: "",
     prescriptionNotes: "",
+    followUpDate: "",
+    bp: "",
+    temperature: "",
+    weight: "",
+    pulse: "",
   });
 
   const [prescriptionItems, setPrescriptionItems] = useState<PrescriptionItem[]>([]);
@@ -161,13 +170,21 @@ export default function DoctorPage() {
 
   const startConsultation = async (item: QueueItem) => {
     setSelectedAppointment(item);
-    setConsultationForm({ diagnosis: "", notes: "", prescriptionNotes: "" });
+    setConsultationForm({ diagnosis: "", notes: "", prescriptionNotes: "", followUpDate: "", bp: "", temperature: "", weight: "", pulse: "" });
     setPrescriptionItems([{ medicineId: "", dosage: "", duration: "", instructions: "", quantity: 1 }]);
     try {
       const res = await consultationApi.getByPatient(item.patient.id);
       setTreatmentHistory(res.data.data);
     } catch {
       setTreatmentHistory([]);
+    }
+    try {
+      if (item.status === "SCHEDULED") {
+        await appointmentApi.updateStatus(item.id, "IN_PROGRESS");
+        fetchQueue();
+      }
+    } catch {
+      /* non-blocking */
     }
   };
 
@@ -204,6 +221,13 @@ export default function DoctorPage() {
         appointmentId: selectedAppointment.id,
         diagnosis: consultationForm.diagnosis,
         notes: consultationForm.notes,
+        followUpDate: consultationForm.followUpDate || undefined,
+        vitalSigns: {
+          bp: consultationForm.bp,
+          temperature: consultationForm.temperature,
+          weight: consultationForm.weight,
+          pulse: consultationForm.pulse,
+        },
       });
 
       const validItems = prescriptionItems.filter((item) => item.medicineId);
@@ -361,6 +385,61 @@ export default function DoctorPage() {
                   </div>
 
                   <div className="border-t pt-4">
+                    <p className="text-base font-semibold flex items-center gap-2 mb-3">
+                      <HeartPulse className="h-4 w-4 text-red-500" />
+                      Vital Signs
+                    </p>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">BP (mmHg)</Label>
+                        <Input
+                          value={consultationForm.bp}
+                          onChange={(e) => setConsultationForm({ ...consultationForm, bp: e.target.value })}
+                          placeholder="120/80"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Temp (°F)</Label>
+                        <Input
+                          value={consultationForm.temperature}
+                          onChange={(e) => setConsultationForm({ ...consultationForm, temperature: e.target.value })}
+                          placeholder="98.6"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Weight (kg)</Label>
+                        <Input
+                          value={consultationForm.weight}
+                          onChange={(e) => setConsultationForm({ ...consultationForm, weight: e.target.value })}
+                          placeholder="70"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Pulse (bpm)</Label>
+                        <Input
+                          value={consultationForm.pulse}
+                          onChange={(e) => setConsultationForm({ ...consultationForm, pulse: e.target.value })}
+                          placeholder="72"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Follow-up Date</Label>
+                      <Input
+                        type="date"
+                        value={consultationForm.followUpDate}
+                        min={new Date().toISOString().split("T")[0]}
+                        onChange={(e) =>
+                          setConsultationForm({ ...consultationForm, followUpDate: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <Label className="text-base font-semibold">Prescription</Label>
                       <Button type="button" variant="outline" size="sm" onClick={addPrescriptionItem}>
@@ -498,6 +577,22 @@ export default function DoctorPage() {
                         {visit.notes && (
                           <p className="text-gray-500 text-xs mt-1 italic">{visit.notes}</p>
                         )}
+                        {visit.vitalSigns && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            <span className="font-medium">Vitals:</span>{" "}
+                            {[
+                              visit.vitalSigns.bp && `BP ${visit.vitalSigns.bp}`,
+                              visit.vitalSigns.temperature && `Temp ${visit.vitalSigns.temperature}°F`,
+                              visit.vitalSigns.weight && `${visit.vitalSigns.weight} kg`,
+                              visit.vitalSigns.pulse && `Pulse ${visit.vitalSigns.pulse}`,
+                            ].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                        {visit.followUpDate && (
+                          <p className="text-xs text-orange-600 mt-1">
+                            <span className="font-medium">Follow-up:</span> {new Date(visit.followUpDate).toLocaleDateString()}
+                          </p>
+                        )}
                         {visit.prescriptions.length > 0 && (
                           <div className="mt-2 space-y-1">
                             {visit.prescriptions.map((rx, i) => (
@@ -561,11 +656,6 @@ export default function DoctorPage() {
                               {item.notes}
                             </p>
                           )}
-                          {item.validUntil && (
-                            <p className="text-xs text-orange-500 mt-1">
-                              Valid until: {new Date(item.validUntil).toLocaleDateString()}
-                            </p>
-                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -626,15 +716,17 @@ export default function DoctorPage() {
                           )}
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openPrintForCompleted(c)}
-                        className="border-green-300 text-green-700 hover:bg-green-100"
-                      >
-                        <Printer className="h-4 w-4 mr-1" />
-                        Print
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openPrintForCompleted(c)}
+                          className="border-green-300 text-green-700 hover:bg-green-100"
+                        >
+                          <Printer className="h-4 w-4 mr-1" />
+                          Print
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

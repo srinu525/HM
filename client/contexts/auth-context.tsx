@@ -6,6 +6,7 @@ import { api, User } from "@/lib/api";
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, organizationSlug: string) => Promise<void>;
+  loginSuperAdmin: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   hasPermission: (permission: string) => boolean;
@@ -18,7 +19,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 function getInitialUser(): User | null {
   if (typeof window === "undefined") return null;
   const savedUser = localStorage.getItem("user");
-  if (!savedUser) return null;
+  const savedToken = localStorage.getItem("token");
+  if (!savedUser || !savedToken) return null;
   try {
     return JSON.parse(savedUser) as User;
   } catch {
@@ -46,17 +48,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("userRole", userData.role);
+    setUser(userData);
+    setLoaded(true);
+  }, []);
+
+  const loginSuperAdmin = useCallback(async (email: string, password: string) => {
+    const response = await api.post("/auth/login-super-admin", { email, password });
+    const { user: userData, token } = response.data.data;
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("userRole", "SUPER_ADMIN");
     setUser(userData);
     setLoaded(true);
   }, []);
 
   const logout = useCallback(() => {
+    const role = localStorage.getItem("userRole");
     const savedSlug = localStorage.getItem("orgSlug") || "default-hospital";
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("orgSlug");
+    localStorage.removeItem("userRole");
     setUser(null);
-    window.location.href = `/${savedSlug}/login`;
+    // Super admins go back to the super admin login, not the org login
+    if (role === "SUPER_ADMIN") {
+      window.location.href = "/super-admin";
+    } else {
+      window.location.href = `/${savedSlug}/login`;
+    }
   }, []);
 
   const permissions = user?.permissions ?? [];
@@ -74,8 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [permissions]);
 
   const value = useMemo(() => ({
-    user, login, logout, isLoading, hasPermission, hasAnyPermission, hasModule,
-  }), [user, login, logout, isLoading, hasPermission, hasAnyPermission, hasModule]);
+    user, login, loginSuperAdmin, logout, isLoading, hasPermission, hasAnyPermission, hasModule,
+  }), [user, login, loginSuperAdmin, logout, isLoading, hasPermission, hasAnyPermission, hasModule]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ export default function SuperAdminLoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { loginSuperAdmin } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,11 +23,7 @@ export default function SuperAdminLoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.post("/auth/login-super-admin", { email, password });
-      const { user: userData, token } = response.data.data;
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(userData));
+      await loginSuperAdmin(email, password);
       router.push("/admin");
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Login failed";
@@ -71,7 +68,7 @@ export default function SuperAdminLoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@hospital.com"
+                  placeholder="superadmin@hms.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required

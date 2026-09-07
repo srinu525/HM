@@ -143,6 +143,23 @@ PATIENT (Patient Portal)
 6. **Staff Scheduling** — Weekly schedule editor per doctor, leave request management with approve/reject
 7. **PWA Support** — manifest.json, service worker, icons, offline caching
 
+### Phase 6 — Subscription & Super Admin Improvements ✅
+
+1. **Plan model enhanced** — added `yearlyPrice`, `billingCycle` (MONTHLY/YEARLY/BOTH), `trialDays`
+2. **Subscription model fixed** — unique constraint changed to `@@unique([organizationId])` (one active sub per org), added `trialEndsAt`, `renewedAt`, `autoRenew`, `cycle`, `cancelledAt`
+3. **SubscriptionHistory** — every plan change (SUBSCRIBED, UPGRADED, DOWNGRADED, CANCELLED, RENEWED, TRIAL_STARTED) is recorded with from/to plan and notes
+4. **Patients unlimited** — removed `maxPatients` from Plan, all plans allow unlimited patients
+5. **Revenue fixed** — `getRevenueByOrg()` now includes both pharmacy `Sale` totals AND invoice `Payment` totals; fixed N+1 query using `groupBy`
+6. **Feature flag enforcement** — `requireFeature()` middleware enforces module flags server-side on: appointments, pharmacy, lab, billing, notifications, audit-logs, files
+7. **Super admin: deleteOrganization** — soft-delete (deactivate) with guard against active subscriptions
+8. **Super admin: expanded updateOrganization** — now supports all org fields (logo, timezone, currency, gstVat, hospitalLicense)
+9. **Super admin: cross-org subscriptions** — `GET /billing/all-subscriptions`, `PUT /billing/orgs/:orgId/subscription/assign`, `PUT /billing/orgs/:orgId/subscription/cancel`
+10. **Super admin: system audit logs** — `GET /admin/audit-logs` with org/entity/action filters + pagination
+11. **Super admin: bulk feature flags** — `PUT /admin/organizations/:orgId/feature-flags/bulk`
+12. **MRR/ARR dashboard** — super admin dashboard now shows MRR, ARR, active subscriptions, new subs this month, churn
+13. **New client pages** — `/admin/organizations/[id]` (org detail drill-down), `/admin/audit-logs` (system audit log), `/admin/subscriptions` refactored with Plans tab + Org Subscriptions tab
+14. **Revenue page** — now shows Sales revenue vs Invoice revenue split per org
+
 ---
 
 ## Schema (Prisma)

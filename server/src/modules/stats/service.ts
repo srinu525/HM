@@ -6,16 +6,20 @@ export class StatsService {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const [totalPatients, todayAppointments, todayRevenue] = await Promise.all([
+    const [totalPatients, todayAppointments, todaySaleRevenue, todayInvoiceRevenue] = await Promise.all([
       prisma.patient.count({ where: { organizationId } }),
       prisma.appointment.count({ where: { date: { gte: today, lt: tomorrow } } }),
       prisma.sale.aggregate({ where: { createdAt: { gte: today, lt: tomorrow } }, _sum: { total: true } }),
+      prisma.payment.aggregate({
+        where: { organizationId, createdAt: { gte: today, lt: tomorrow }, status: "COMPLETED" },
+        _sum: { amount: true },
+      }),
     ]);
 
     return {
       totalPatients,
       todayAppointments,
-      todayRevenue: todayRevenue._sum.total || 0,
+      todayRevenue: (todaySaleRevenue._sum.total || 0) + (todayInvoiceRevenue._sum.amount || 0),
     };
   }
 

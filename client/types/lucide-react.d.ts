@@ -45,6 +45,7 @@ declare module "lucide-react" {
   export const TrendingUp: Icon;
   export const CheckCheck: Icon;
   export const Activity: Icon;
+  export const HeartPulse: Icon;
   export const Settings: Icon;
   export const Home: Icon;
   export const BarChart3: Icon;
@@ -82,4 +83,12 @@ declare module "lucide-react" {
   export const Server: Icon;
   export const Ban: Icon;
   export const Smartphone: Icon;
+  // Extended icons for super admin UI
+  export const Zap: Icon;
+  export const Globe: Icon;
+  export const Sliders: Icon;
+  export const TrendingDown: Icon;
+  export const ArrowUpRight: Icon;
+  export const ExternalLink: Icon;
+  export const Link: Icon;
 }

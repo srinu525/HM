@@ -34,15 +34,21 @@ export default function PatientAppointmentsPage() {
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [notes, setNotes] = useState("");
   const [booking, setBooking] = useState(false);
+  const [error, setError] = useState("");
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const fetchData = () => {
     setLoading(true);
+    setError("");
     Promise.all([
       patientPortalApi.getAppointments(),
       patientPortalApi.getDoctors(),
     ]).then(([aptRes, docRes]) => {
       setAppointments(aptRes.data.data || []);
       setDoctors(docRes.data.data || []);
+    }).catch((err) => {
+      console.error(err);
+      setError("Failed to load data");
     }).finally(() => setLoading(false));
   };
 
@@ -57,10 +63,24 @@ export default function PatientAppointmentsPage() {
       setSelectedDoctor("");
       setNotes("");
       fetchData();
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr.response?.data?.message || "Failed to book appointment");
     } finally {
       setBooking(false);
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    setCancellingId(id);
+    try {
+      await patientPortalApi.cancelAppointment(id);
+      fetchData();
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr.response?.data?.message || "Failed to cancel appointment");
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -124,6 +144,9 @@ export default function PatientAppointmentsPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        {error && (
+          <div className="p-4 text-sm text-red-600 bg-red-50 border-b border-red-200">{error}</div>
+        )}
         {loading ? (
           <div className="p-12 text-center text-gray-500">Loading appointments...</div>
         ) : appointments.length === 0 ? (
@@ -152,6 +175,17 @@ export default function PatientAppointmentsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={statusBadge(apt.status)}>{apt.status.replace("_", " ")}</span>
+                  {apt.status === "SCHEDULED" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => handleCancel(apt.id)}
+                      disabled={cancellingId === apt.id}
+                    >
+                      {cancellingId === apt.id ? "Cancelling..." : "Cancel"}
+                    </Button>
+                  )}
                   {apt.consultation?.diagnosis && (
                     <span className="text-xs text-gray-400">Diagnosis: {apt.consultation.diagnosis}</span>
                   )}

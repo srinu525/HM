@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarPlus, Calendar, Search, CheckCircle2, X, Filter, Download } from "lucide-react";
+import { CalendarPlus, Calendar, Search, CheckCircle2, X, Filter, Printer, UserPlus, Receipt } from "lucide-react";
 
 interface Patient {
   id: string;
@@ -104,6 +104,17 @@ export default function AppointmentsPage() {
   );
 }
 
+interface Booking {
+  patient?: Patient;
+  doctorId: string;
+  notes: string;
+  consultationFee: string;
+  validUntil: string;
+  date: string;
+}
+
+const todayStr = () => new Date().toISOString().split("T")[0];
+
 function BookAppointment() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -111,12 +122,17 @@ function BookAppointment() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [booked, setBooked] = useState<{ token: number; appt: { date?: string; patient?: { name: string; patientId?: string; phone?: string | null }; doctor?: { name: string } } } | null>(null);
+  const [quickRegisterOpen, setQuickRegisterOpen] = useState(false);
+  const [quickForm, setQuickForm] = useState({ name: "", phone: "", gender: "MALE", age: "" });
+  const [quickLoading, setQuickLoading] = useState(false);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<Booking>({
     doctorId: "",
     notes: "",
     consultationFee: "",
     validUntil: "",
+    date: todayStr(),
   });
 
   useEffect(() => {
@@ -146,9 +162,42 @@ function BookAppointment() {
   };
 
   const resetForm = () => {
-    setForm({ doctorId: "", notes: "", consultationFee: "", validUntil: "" });
+    setForm({ doctorId: "", notes: "", consultationFee: "", validUntil: "", date: todayStr() });
     setSelectedPatient(null);
     setSearch("");
+    setBooked(null);
+  };
+
+  const handleQuickRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickForm.name || !quickForm.phone) {
+      setMessage("Name and phone are required to register");
+      return;
+    }
+    setQuickLoading(true);
+    setMessage("");
+    try {
+      const res = await api.post("/patients", {
+        name: quickForm.name,
+        phone: quickForm.phone,
+        gender: quickForm.gender,
+        age: quickForm.age ? Number(quickForm.age) : 0,
+        dob: null,
+        address: "",
+      });
+      const created = res.data.data;
+      setSelectedPatient(created);
+      setSearch(created.name);
+      setPatients((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
+      setQuickRegisterOpen(false);
+      setQuickForm({ name: "", phone: "", gender: "MALE", age: "" });
+      setMessage(`Patient registered: ${created.name} (${created.patientId})`);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setMessage(error.response?.data?.message || "Failed to register patient");
+    } finally {
+      setQuickLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,8 +215,10 @@ function BookAppointment() {
         notes: form.notes,
         consultationFee: form.consultationFee ? parseFloat(form.consultationFee) : 0,
         validUntil: form.validUntil || undefined,
+        date: form.date || undefined,
       });
       setMessage(`Appointment booked! Token #${res.data.data.token}`);
+      setBooked({ token: res.data.data.token, appt: res.data.data });
       resetForm();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -177,16 +228,22 @@ function BookAppointment() {
     }
   };
 
+  const showQuickRegister = !selectedPatient && search.trim().length > 0 && patients.length === 0;
+
   return (
     <>
       {message && (
         <div className={`p-3 rounded-md text-sm flex items-center gap-2 ${
-          message.includes("Token") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+          message.includes("Token") || message.includes("registered")
+            ? "bg-green-50 text-green-700"
+            : "bg-red-50 text-red-700"
         }`}>
-          {message.includes("Token") && <CheckCircle2 className="h-4 w-4 shrink-0" />}
+          {(message.includes("Token") || message.includes("registered")) && <CheckCircle2 className="h-4 w-4 shrink-0" />}
           {message}
         </div>
       )}
+
+      {booked && <TokenSlip token={booked.token} appt={booked.appt} onClose={() => setBooked(null)} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -242,6 +299,53 @@ function BookAppointment() {
                   </button>
                 ))}
               </div>
+
+              {showQuickRegister && (
+                <div className="p-4 border border-dashed border-gray-300 rounded-xl bg-gray-50">
+                  <p className="text-sm text-gray-600 mb-3">
+                    No matching patient found. Register <span className="font-medium">"{search}"</span> as a new patient?
+                  </p>
+                  <form onSubmit={handleQuickRegister} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Name *</Label>
+                        <Input value={quickForm.name} onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })} placeholder="Full name" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Phone *</Label>
+                        <Input value={quickForm.phone} onChange={(e) => setQuickForm({ ...quickForm, phone: e.target.value })} placeholder="10-digit phone" pattern="[0-9]{10}" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Gender</Label>
+                        <Select
+                          value={quickForm.gender}
+                          onValueChange={(v) => v && setQuickForm({ ...quickForm, gender: v })}
+                          items={{ MALE: "Male", FEMALE: "Female", OTHER: "Other" }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MALE">Male</SelectItem>
+                            <SelectItem value="FEMALE">Female</SelectItem>
+                            <SelectItem value="OTHER">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Age</Label>
+                        <Input type="number" min={0} value={quickForm.age} onChange={(e) => setQuickForm({ ...quickForm, age: e.target.value })} />
+                      </div>
+                    </div>
+                    <Button type="submit" size="sm" disabled={quickLoading} className="w-full">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      {quickLoading ? "Registering..." : "Register & Select"}
+                    </Button>
+                  </form>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -277,13 +381,12 @@ function BookAppointment() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Consultation Fee</Label>
+                  <Label>Appointment Date *</Label>
                   <Input
-                    type="number"
-                    min={0}
-                    value={form.consultationFee}
-                    onChange={(e) => setForm({ ...form, consultationFee: e.target.value })}
-                    placeholder="0"
+                    type="date"
+                    value={form.date}
+                    min={todayStr()}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -291,8 +394,21 @@ function BookAppointment() {
                   <Input
                     type="date"
                     value={form.validUntil}
-                    min={new Date().toISOString().split("T")[0]}
+                    min={form.date || todayStr()}
                     onChange={(e) => setForm({ ...form, validUntil: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-2">
+                  <Label>Consultation Fee</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={form.consultationFee}
+                    onChange={(e) => setForm({ ...form, consultationFee: e.target.value })}
+                    placeholder="0"
                   />
                 </div>
               </div>
@@ -310,7 +426,7 @@ function BookAppointment() {
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={loading || !selectedPatient || !form.doctorId}
+                disabled={loading || !selectedPatient || !form.doctorId || !form.date}
               >
                 <CalendarPlus className="h-4 w-4 mr-2" />
                 {loading ? "Booking..." : "Book Appointment"}
@@ -323,25 +439,93 @@ function BookAppointment() {
   );
 }
 
+function TokenSlip({ token, appt, onClose }: { token: number; appt: { date?: string; patient?: { name: string; patientId?: string; phone?: string | null }; doctor?: { name: string } }; onClose: () => void }) {
+  const apptDate = appt.date ? new Date(appt.date).toLocaleString() : new Date().toLocaleString();
+  const patientName = appt.patient?.name || "Patient";
+  const patientId = appt.patient?.patientId || "";
+  const patientPhone = appt.patient?.phone || "";
+  const doctorName = appt.doctor?.name || "";
+
+  const handlePrint = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <html><head><title>Appointment Slip</title>
+      <style>
+        body { font-family: Arial, sans-serif; }
+        .slip { border: 2px dashed #333; padding: 24px; width: 300px; margin: 20px auto; text-align: center; }
+        h2 { margin: 0 0 8px; } .org { color: #666; margin-bottom: 12px; }
+        .token { font-size: 40px; font-weight: bold; margin: 8px 0; }
+        .row { display: flex; justify-content: space-between; margin: 4px 0; }
+        .tag{color:#888;font-size:12px} .val{font-weight:600}
+      </style></head><body>
+      <div class="slip">
+        <h2>Appointment Slip</h2>
+        <div class="org">HM Hospital</div>
+        <div class="token">#${token}</div>
+        <div class="row"><span class="tag">Patient</span><span class="val">${patientName}</span></div>
+        ${patientId ? `<div class="row"><span class="tag">ID</span><span class="val">${patientId}</span></div>` : ""}
+        ${patientPhone ? `<div class="row"><span class="tag">Phone</span><span class="val">${patientPhone}</span></div>` : ""}
+        <div class="row"><span class="tag">Doctor</span><span class="val">${doctorName}</span></div>
+        <div class="row"><span class="tag">Date</span><span class="val">${apptDate}</span></div>
+      </div>
+      </body></html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
+
+  return (
+    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <CheckCircle2 className="h-6 w-6 text-emerald-600 shrink-0" />
+        <div>
+          <p className="font-medium text-emerald-800">Appointment booked — Token #{token}</p>
+          <p className="text-sm text-emerald-700">
+            {patientName} · Dr. {doctorName} · {apptDate}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button type="button" size="sm" onClick={handlePrint}>
+          <Printer className="h-4 w-4 mr-1.5" /> Print Slip
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function AppointmentsList() {
+  const { user } = useAuth();
+  const canInvoice = user?.role === "SUPER_ADMIN" || user?.permissions?.some(p => p === "invoices.create");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ doctorId: "", status: "", date: "" });
+  const [invoiceMsg, setInvoiceMsg] = useState("");
+  const [filters, setFilters] = useState({ doctorId: "", status: "", date: todayStr() });
 
   useEffect(() => {
     async function load() {
       const dRes = await api.get("/users/doctors");
       setDoctors(dRes.data.data);
-      await fetchAppointments();
     }
     load();
   }, []);
 
-  const fetchAppointments = async () => {
+  useEffect(() => {
+    fetchAppointments(filters.date);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.date]);
+
+  const fetchAppointments = async (date?: string) => {
     setLoading(true);
     try {
-      const res = await api.get("/appointments");
+      const res = await api.get("/appointments/by-date", { params: { date: date || undefined } });
       setAppointments(res.data.data);
     } catch (error) {
       console.error(error);
@@ -350,14 +534,24 @@ function AppointmentsList() {
     }
   };
 
+  const handleCreateInvoice = async (apt: Appointment) => {
+    setInvoiceMsg("");
+    try {
+      await api.post("/invoices", {
+        patientId: apt.patient.id,
+        description: `Consultation - Token #${apt.token} (${apt.doctor.name})`,
+        items: [{ description: "Consultation fee", quantity: 1, unitPrice: apt.consultationFee || 0 }],
+      });
+      setInvoiceMsg(`Invoice created for ${apt.patient.name}`);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setInvoiceMsg(error.response?.data?.message || "Failed to create invoice");
+    }
+  };
+
   const filteredAppointments = appointments.filter((apt) => {
     if (filters.doctorId && apt.doctor.id !== filters.doctorId) return false;
     if (filters.status && apt.status !== filters.status) return false;
-    if (filters.date) {
-      const aptDate = new Date(apt.date).toDateString();
-      const filterDate = new Date(filters.date).toDateString();
-      if (aptDate !== filterDate) return false;
-    }
     return true;
   });
 
@@ -373,6 +567,14 @@ function AppointmentsList() {
 
   return (
     <>
+      {invoiceMsg && (
+        <div className={`p-3 rounded-md text-sm flex items-center gap-2 ${
+          invoiceMsg.includes("created") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+        }`}>
+          {invoiceMsg.includes("created") && <CheckCircle2 className="h-4 w-4 shrink-0" />}
+          {invoiceMsg}
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -465,6 +667,7 @@ function AppointmentsList() {
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Date</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Fee</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -483,12 +686,25 @@ function AppointmentsList() {
                       </td>
                       <td className="py-3 px-4 text-sm">
                         {apt.consultationFee > 0 ? (
-                          <span className="text-green-600 font-medium">${apt.consultationFee}</span>
+                          <span className="text-green-600 font-medium">₹{apt.consultationFee}</span>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
                       <td className="py-3 px-4">{getStatusBadge(apt.status)}</td>
+                      <td className="py-3 px-4">
+                        {apt.status === "COMPLETED" && canInvoice && (
+                          <Button
+                            type="button"
+                            size="xs"
+                            variant="outline"
+                            onClick={() => handleCreateInvoice(apt)}
+                          >
+                            <Receipt className="h-3.5 w-3.5 mr-1" />
+                            Invoice
+                          </Button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

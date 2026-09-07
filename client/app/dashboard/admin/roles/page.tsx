@@ -81,7 +81,13 @@ export default function RolesPage() {
   const fetchAllPermissions = useCallback(async () => {
     try {
       const res = await api.get("/permissions");
-      setModules(res.data.data.modules);
+      // API returns { "patients": [...], "appointments": [...] } grouped by module
+      // Convert to PermissionModule[] array
+      const grouped = res.data.data as Record<string, Permission[]>;
+      const moduleArray: PermissionModule[] = Object.entries(grouped).map(
+        ([name, permissions]) => ({ name, permissions })
+      );
+      setModules(moduleArray);
     } catch (error) {
       console.error(error);
       setMessage("Failed to load permissions");
@@ -206,8 +212,8 @@ export default function RolesPage() {
     });
   };
 
-  const totalPermissions = modules.reduce((sum, m) => sum + m.permissions.length, 0);
-  const checkedCount = modules
+  const totalPermissions = (modules ?? []).reduce((sum, m) => sum + m.permissions.length, 0);
+  const checkedCount = (modules ?? [])
     .flatMap((m) => m.permissions)
     .filter((p) => rolePermissions.has(p.id)).length;
 

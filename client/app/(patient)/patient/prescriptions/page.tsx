@@ -27,10 +27,14 @@ interface Prescription {
 export default function PatientPrescriptionsPage() {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     patientPortalApi.getPrescriptions().then((res) => {
       setPrescriptions(res.data.data || []);
+    }).catch((err) => {
+      console.error(err);
+      setError("Failed to load prescriptions");
     }).finally(() => setLoading(false));
   }, []);
 
@@ -43,6 +47,8 @@ export default function PatientPrescriptionsPage() {
 
       {loading ? (
         <div className="p-12 text-center text-gray-500">Loading prescriptions...</div>
+      ) : error ? (
+        <div className="p-12 text-center text-red-500">{error}</div>
       ) : prescriptions.length === 0 ? (
         <div className="p-12 text-center">
           <Pill className="h-12 w-12 text-gray-300 mx-auto mb-4" />

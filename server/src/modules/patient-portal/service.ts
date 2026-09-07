@@ -145,6 +145,20 @@ export class PatientPortalService {
     });
   }
 
+  async cancelAppointment(appointmentId: string, patientId: string) {
+    const appointment = await prisma.appointment.findFirst({
+      where: { id: appointmentId, patientId },
+    });
+    if (!appointment) throw AppError.notFound("Appointment not found");
+    if (appointment.status === "CANCELLED") throw AppError.badRequest("Appointment is already cancelled");
+    if (appointment.status === "COMPLETED") throw AppError.badRequest("Cannot cancel a completed appointment");
+
+    return prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status: "CANCELLED" },
+    });
+  }
+
   async getDoctors(organizationId: string) {
     return prisma.user.findMany({
       where: { role: "DOCTOR", isActive: true, organizationId },

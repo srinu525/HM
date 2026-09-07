@@ -59,7 +59,7 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
-    if (filters.doctorId || filters.startDate || filters.endDate) {
+    if (filters.doctorId || filters.patientId || filters.startDate || filters.endDate) {
       loadHistory();
     }
   }, [filters]);
@@ -78,6 +78,7 @@ export default function ReportsPage() {
     try {
       const params: Record<string, string> = {};
       if (filters.doctorId) params.doctorId = filters.doctorId;
+      if (filters.patientId) params.patientId = filters.patientId;
       if (filters.startDate) params.startDate = filters.startDate;
       if (filters.endDate) params.endDate = filters.endDate;
 
@@ -145,7 +146,7 @@ export default function ReportsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label>Doctor</Label>
               <Select
@@ -173,6 +174,16 @@ export default function ReportsPage() {
                 type="date"
                 value={filters.startDate}
                 onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Patient Name/ID</Label>
+              <Input
+                type="text"
+                value={filters.patientId}
+                onChange={(e) => setFilters({ ...filters, patientId: e.target.value })}
+                placeholder="Filter by patient"
               />
             </div>
 

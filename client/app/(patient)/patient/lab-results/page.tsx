@@ -17,10 +17,14 @@ interface LabResult {
 export default function PatientLabResultsPage() {
   const [results, setResults] = useState<LabResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     patientPortalApi.getLabResults().then((res) => {
       setResults(res.data.data || []);
+    }).catch((err) => {
+      console.error(err);
+      setError("Failed to load lab results");
     }).finally(() => setLoading(false));
   }, []);
 
@@ -33,6 +37,8 @@ export default function PatientLabResultsPage() {
 
       {loading ? (
         <div className="p-12 text-center text-gray-500">Loading lab results...</div>
+      ) : error ? (
+        <div className="p-12 text-center text-red-500">{error}</div>
       ) : results.length === 0 ? (
         <div className="p-12 text-center">
           <TestTube className="h-12 w-12 text-gray-300 mx-auto mb-4" />

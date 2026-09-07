@@ -103,12 +103,12 @@ async function main() {
     console.log("Hospital Admin user created: admin@hospital.com / admin123");
   }
 
-  // Seed subscription plans
+  // Seed subscription plans (patients are always unlimited)
   const plansData = [
-    { name: "Free", description: "Basic features for small clinics", price: 0, maxUsers: 3, maxPatients: 50, features: ["Basic patient management", "Appointment scheduling", "Prescription management"] },
-    { name: "Starter", description: "Essential features for growing practices", price: 999, maxUsers: 10, maxPatients: 500, features: ["Everything in Free", "Pharmacy management", "Sales tracking", "Email notifications"] },
-    { name: "Professional", description: "Advanced features for established hospitals", price: 2999, maxUsers: 50, maxPatients: 5000, features: ["Everything in Starter", "Advanced analytics", "Audit logs", "Priority support", "Custom branding"] },
-    { name: "Enterprise", description: "Full-featured for large organizations", price: 9999, maxUsers: -1, maxPatients: -1, features: ["Everything in Professional", "Unlimited users & patients", "API access", "Dedicated support", "SLA guarantee", "Custom integrations"] },
+    { name: "Free", description: "Basic features for small clinics", price: 0, maxUsers: 3, maxDoctors: 1, modules: ["reception", "doctor"], features: ["Patient registration", "Appointment booking", "Doctor consultations", "Prescriptions"], sortOrder: 1 },
+    { name: "Starter", description: "Essential features for growing practices", price: 999, maxUsers: 10, maxDoctors: 3, modules: ["reception", "doctor", "pharmacy", "admin"], features: ["Everything in Free", "Pharmacy management", "Lab module", "Reports & analytics"], sortOrder: 2 },
+    { name: "Professional", description: "Advanced features for established hospitals", price: 2999, maxUsers: 50, maxDoctors: 10, modules: ["reception", "doctor", "pharmacy", "admin"], features: ["Everything in Starter", "Advanced analytics", "Audit logs", "Scheduling", "Priority support"], sortOrder: 3 },
+    { name: "Enterprise", description: "Full-featured for large organizations", price: 9999, maxUsers: -1, maxDoctors: -1, modules: ["reception", "doctor", "pharmacy", "admin"], features: ["Everything in Professional", "Unlimited users & doctors", "API access", "Dedicated support", "SLA guarantee", "Custom integrations"], sortOrder: 4 },
   ];
 
   for (const plan of plansData) {
@@ -119,6 +119,24 @@ async function main() {
     });
   }
   console.log("Subscription plans seeded");
+
+  // Seed add-on catalog
+  const addonsData = [
+    { name: "Pharmacy Module", description: "Enables the pharmacy module (inventory, sales)", price: 499, module: "pharmacy" },
+    { name: "Lab Module", description: "Enables lab tests and results management", price: 399, module: "lab" },
+    { name: "Reports & Analytics", description: "Advanced reports and analytics dashboards", price: 299, module: "reports" },
+    { name: "Extra Doctors", description: "Add 5 additional doctor seats", price: 999, module: "doctor" },
+    { name: "SMS Notifications", description: "Patient SMS appointment reminders", price: 199, module: "notifications" },
+  ];
+
+  for (const addon of addonsData) {
+    await prisma.planAddon.upsert({
+      where: { name: addon.name },
+      update: addon,
+      create: addon,
+    });
+  }
+  console.log("Add-on catalog seeded");
 
   // Set passwords for existing patients (if any) for patient portal access
   const existingPatients = await prisma.patient.findMany({ where: { password: null as any } });

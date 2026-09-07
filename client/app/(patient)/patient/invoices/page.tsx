@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { patientPortalApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CreditCard, Download, Loader2, CheckCircle } from "lucide-react";
 
 interface InvoiceItem {
@@ -40,11 +41,17 @@ export default function PatientInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [confirmPay, setConfirmPay] = useState<Invoice | null>(null);
 
   const fetchInvoices = () => {
     setLoading(true);
+    setError("");
     patientPortalApi.getInvoices().then((res) => {
       setInvoices(res.data.data || []);
+    }).catch((err) => {
+      console.error(err);
+      setError("Failed to load invoices");
     }).finally(() => setLoading(false));
   };
 
@@ -52,11 +59,13 @@ export default function PatientInvoicesPage() {
 
   const handlePay = async (id: string) => {
     setPayingId(id);
+    setConfirmPay(null);
     try {
       await patientPortalApi.payInvoice(id);
       fetchInvoices();
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr.response?.data?.message || "Payment failed");
     } finally {
       setPayingId(null);
     }
@@ -72,8 +81,9 @@ export default function PatientInvoicesPage() {
       a.download = `invoice-${id}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
+      setError("Failed to download PDF");
     }
   };
 
@@ -86,6 +96,10 @@ export default function PatientInvoicesPage() {
         <h1 className="text-2xl font-bold text-gray-900">Pay Bills</h1>
         <p className="text-gray-500 mt-1">View and pay your invoices</p>
       </div>
+
+      {error && (
+        <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl">{error}</div>
+      )}
 
       {loading ? (
         <div className="p-12 text-center text-gray-500">Loading invoices...</div>
@@ -161,7 +175,7 @@ export default function PatientInvoicesPage() {
                             <Button
                               size="sm"
                               className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                              onClick={() => handlePay(invoice.id)}
+                              onClick={() => setConfirmPay(invoice)}
                               disabled={payingId === invoice.id}
                             >
                               {payingId === invoice.id ? (
@@ -211,6 +225,30 @@ export default function PatientInvoicesPage() {
           )}
         </div>
       )}
+
+      <Dialog open={!!confirmPay} onOpenChange={(open) => { if (!open) setConfirmPay(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirm Payment</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              You are about to pay <span className="font-semibold">₹{confirmPay?.total}</span> for invoice <span className="font-semibold">{confirmPay?.invoiceNumber}</span>.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setConfirmPay(null)}>Cancel</Button>
+              <Button
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => confirmPay && handlePay(confirmPay.id)}
+                disabled={!!payingId}
+              >
+                {payingId ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                Confirm Pay
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

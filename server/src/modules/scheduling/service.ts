@@ -47,7 +47,7 @@ export class SchedulingService {
   async getDoctorSchedules(organizationId: string) {
     const doctors = await prisma.user.findMany({
       where: { role: "DOCTOR", isActive: true, organizationId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, email: true },
       orderBy: { name: "asc" },
     });
 

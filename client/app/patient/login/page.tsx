@@ -26,6 +26,7 @@ export default function PatientLoginPage() {
       const { token, patient } = response.data.data;
 
       localStorage.setItem("token", token);
+      localStorage.setItem("userRole", "PATIENT");
       const user = {
         id: patient.id,
         name: patient.name,
@@ -38,7 +39,8 @@ export default function PatientLoginPage() {
 
       router.push("/patient");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Login failed";
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      const message = axiosErr.response?.data?.message || axiosErr.message || "Login failed";
       setError(message);
     } finally {
       setIsLoading(false);
